@@ -122,3 +122,27 @@ func TestFacilityString(t *testing.T) {
 		}
 	}
 }
+
+func TestSeverityString(t *testing.T) {
+	tests := []struct {
+		Severity Severity
+		Expected string
+	}{
+		{Emergency, "Emergency"},
+		{Alert, "Alert"},
+		{Critical, "Critical"},
+		{Error, "Error"},
+		{Warning, "Warning"},
+		{Notice, "Notice"},
+		{Informational, "Informational"},
+		{Debug, "Debug"},
+	}
+
+	for _, test := range tests {
+		got := test.Severity.String()
+		if got != test.Expected {
+			t.Fatalf("Expected %#v.String() to return %s, but got %s",
+				test.Severity, test.Expected, got)
+		}
+	}
+}

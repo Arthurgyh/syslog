@@ -11,10 +11,12 @@ const (
 	maxPriority = maxFacility*multiplier + maxSeverity
 
 	facilityNames = "KernelUser-LevelMailSystemSecurity/authorizationInternalLine printerNetwork newsUUCPClock deamonSecurity/authorizationFTP deamonNTPLog auditLog alertClock deamon2Local 0Local 1Local 2Local 3Local 4Local 5Local 6Local 7"
+	severityNames = "EmergencyAlertCriticalErrorWarningNoticeInformationalDebug"
 )
 
 var (
 	facilityIndices = [...]uint8{0, 6, 16, 20, 26, 48, 56, 68, 80, 84, 96, 118, 128, 131, 140, 149, 162, 169, 176, 183, 190, 197, 204, 211, 218}
+	severityIndices = [...]uint8{0, 9, 14, 22, 27, 34, 40, 53, 58}
 )
 
 // Priority used to calculate facility and severity.
@@ -97,6 +99,13 @@ type Severity uint8
 // IsValid checks if the severity is valid. That is between 0 and 7.
 func (severity Severity) IsValid() bool {
 	return severity <= maxSeverity
+}
+
+func (severity Severity) String() string {
+	if !severity.IsValid() {
+		return "Invalid"
+	}
+	return severityNames[severityIndices[severity]:severityIndices[severity+1]]
 }
 
 // Available severity levels, taken from RFC 5424.
