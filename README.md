@@ -6,6 +6,11 @@
 Syslog is a package to parse syslog messages. It currently has formats for
 RFC5424 and Nginx.
 
+## Warning
+
+This package is very much in the alpha stage. This API might change, but more
+importantly this parsing formats might not be 100% correct and might too strict.
+
 ## Installation
 
 Run the following line to install.
