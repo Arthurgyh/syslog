@@ -13,7 +13,7 @@ var (
 	// https://tools.ietf.org/html/rfc5424 for more information.
 	RFC5424 = rfc5424Format
 
-	// Nginx is the format to parse Nginx syslog messages. To allow the
+	// Nginx is the format to parse Nginx syslog access messages. To allow the
 	// Message.Data to be filled the following logformat is required to be used:
 	//
 	//	log_format syslog '[request '
@@ -32,7 +32,7 @@ var (
 	// Using this log_format allows the Message.Data["Request"] to be filled with
 	// the data from Nginx. Using the above we can acces the status using
 	// Message.Data["Request"]["status"].
-	Nginx = nginxFormat
+	NginxAccess = nginxAccessFormat
 )
 
 var rfc5424Format = format{
@@ -55,7 +55,7 @@ var rfc5424Format = format{
 	optional(2, parseSpace, parseMsg),
 }
 
-var nginxFormat = format{
+var nginxAccessFormat = format{
 	parsePriority,
 	calculateFacility,
 	calculateSeverity,

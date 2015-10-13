@@ -104,7 +104,7 @@ func TestParseMessageRFC5424(t *testing.T) {
 	}
 }
 
-func TestParseMessageNginx(t *testing.T) {
+func TestParseMessageNginxAccess(t *testing.T) {
 	t.Parallel()
 
 	var now = time.Now()
@@ -165,7 +165,7 @@ func TestParseMessageNginx(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		got, err := ParseMessage([]byte(test.Input), Nginx)
+		got, err := ParseMessage([]byte(test.Input), NginxAccess)
 		if err != nil {
 			t.Fatalf("Unexpected error ParseMessage(%q): %s", test.Input, err.Error())
 		}
