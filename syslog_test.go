@@ -235,6 +235,51 @@ func TestParseMessageNginxAccess(t *testing.T) {
 	}
 }
 
+func TestParseMessageNginxError(t *testing.T) {
+	t.Parallel()
+
+	var now = time.Now()
+
+	tests := []struct {
+		Input    string
+		Expected *Message
+	}{
+		// todo: add more error messages.
+		{
+			`<187>Oct 13 12:31:40 hostname nginx: 2015/10/13 01:31:40 [error] 1187#1187: *46 open() "/usr/share/nginx/html/test" failed (2: No such file or directory), client: 192.168.1.255, server: localhost, request: "GET /test HTTP/1.1", host: "192.168.1.254"`,
+			&Message{
+				Priority:  Priority(187),
+				Facility:  Local7,
+				Severity:  Error,
+				Timestamp: time.Date(now.Year(), 10, 13, 12, 31, 40, 0, now.Location()),
+				Hostname:  "hostname",
+				Appname:   "nginx",
+				Message:   `1187#1187: *46 open() "/usr/share/nginx/html/test" failed (2: No such file or directory)`,
+				Data: map[string]map[string]string{
+					"data": {
+						"client":  "192.168.1.255",
+						"server":  "localhost",
+						"request": "GET /test HTTP/1.1",
+						"host":    "192.168.1.254",
+					},
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		got, err := ParseMessage([]byte(test.Input), NginxError)
+		if err != nil {
+			t.Fatalf("Unexpected error ParseMessage(%q): %s", test.Input, err.Error())
+		}
+		expected := test.Expected
+
+		if err := testEqualMessage(got, expected); err != nil {
+			t.Fatal(err.Error())
+		}
+	}
+}
+
 func testEqualMessage(got, expected *Message) error {
 	if expected.Priority != got.Priority {
 		return fmt.Errorf("Expected Message.Priority to be %v, but got %v",

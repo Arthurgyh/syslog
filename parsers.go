@@ -27,6 +27,8 @@ const (
 	nilValueByte  byte = '-'
 	equalByte     byte = '='
 	qouteByte     byte = '"'
+	commaByte     byte = ','
+	colonByte     byte = ':'
 	priorityStart byte = '<'
 	priorityEnd   byte = '>'
 	dataStart     byte = '['
@@ -330,4 +332,49 @@ func nextIsNilValue(b *bufio.Reader) bool {
 		return false
 	}
 	return true
+}
+
+func parseNginxMsg(b *bufio.Reader, msg *Message) error {
+	bytes, err := b.ReadSlice(commaByte)
+	if err != nil {
+		return err
+	}
+
+	msg.Message = string(bytes[:len(bytes)-1])
+	return nil
+}
+
+func parseNginxData(b *bufio.Reader, msg *Message) error {
+	var data = map[string]string{}
+	for {
+		bb, err := b.ReadSlice(commaByte)
+		if err != nil && err != io.EOF {
+			return err
+		}
+
+		// todo: optizime this. Possible lines:
+		// `key: value,`
+		// `key: value`
+		// ` key: value`
+		// `key: "value",`
+		// `key: "value"`
+		// ` key: "value"`
+		keyValue := bytes.SplitN(bb, []byte{colonByte}, 2)
+		key := bytes.TrimPrefix(keyValue[0], []byte{spaceByte})
+		value := keyValue[1]
+		value = bytes.TrimPrefix(value, []byte{spaceByte})
+		value = bytes.TrimSuffix(value, []byte{commaByte})
+		value = bytes.TrimPrefix(value, []byte{qouteByte})
+		value = bytes.TrimSuffix(value, []byte{qouteByte})
+
+		data[string(key)] = string(value)
+
+		if err == io.EOF {
+			break
+		}
+	}
+
+	msg.Data = map[string]map[string]string{}
+	msg.Data["data"] = data
+	return nil
 }

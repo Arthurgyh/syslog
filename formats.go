@@ -33,6 +33,9 @@ var (
 	// the data from Nginx. Using the above we can acces the status using
 	// Message.Data["Request"]["status"].
 	NginxAccess = nginxAccessFormat
+
+	// NginxError is the format to parse Nginx syslog error messages.
+	NginxError = nginxErrorFormat
 )
 
 var rfc5424Format = format{
@@ -68,4 +71,26 @@ var nginxAccessFormat = format{
 	nginxFixAppName,
 	discardSpace,
 	parseData,
+}
+
+var nginxErrorFormat = format{
+	parsePriority,
+	calculateFacility,
+	calculateSeverity,
+	parseTimestamp("Jan _2 15:04:05"),
+	nginxFixTimestamp,
+	discardSpace,
+	parseHostname,
+	discardSpace,
+	parseAppname,
+	nginxFixAppName,
+	discardSpace,
+	discard(19), // Timestamp is provided again (yyyy/mm/dd hh:mm:ss).
+	discardSpace,
+	discardByte('['),
+	discardUntil(']'), // Severity is given again ([Severity], e.g. [Error])
+	discardSpace,
+	parseNginxMsg,
+	discardSpace,
+	parseNginxData,
 }
