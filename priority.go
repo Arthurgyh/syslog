@@ -64,7 +64,7 @@ const (
 	ClockDeamon                            // Clock daemon.
 	SecurityAuthorization2                 // Security/authorization messages.
 	FTPDeamon                              // FTP daemon.
-	NTPSubsystem                           // NTP subsystem.
+	NTP                                    // NTP subsystem.
 	LogAudit                               // Log audit.
 	LogAlert                               // Log alert.
 	ClockDeamon2                           // Clock daemon (note 2).
