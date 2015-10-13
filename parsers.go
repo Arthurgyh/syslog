@@ -263,7 +263,7 @@ func parseMsg(b *bufio.Reader, msg *Message) error {
 	return nil
 }
 
-func parseSpace(b *bufio.Reader, msg *Message) error {
+func discardSpace(b *bufio.Reader, msg *Message) error {
 	return checkByte(b, spaceByte)
 }
 
