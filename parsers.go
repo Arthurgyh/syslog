@@ -263,6 +263,32 @@ func parseMsg(b *bufio.Reader, msg *Message) error {
 	return nil
 }
 
+// Discard discard the number of given bytes.
+func discard(n int) parseFunc {
+	return func(b *bufio.Reader, msg *Message) error {
+		_, err := b.Discard(n)
+		return err
+	}
+}
+
+// DiscardByte check if the next byte is the given byte and then discards it.
+// It returns an error if the next byte is not the given byte.
+func discardByte(c byte) parseFunc {
+	return func(b *bufio.Reader, msg *Message) error {
+		return checkByte(b, c)
+	}
+}
+
+// DiscardUntil discard all bytes until the given byte is found.
+//
+// Note: the discarded bytes include the given byte.
+func discardUntil(c byte) parseFunc {
+	return func(b *bufio.Reader, msg *Message) error {
+		_, err := b.ReadSlice(c)
+		return err
+	}
+}
+
 func discardSpace(b *bufio.Reader, msg *Message) error {
 	return checkByte(b, spaceByte)
 }
