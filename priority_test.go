@@ -82,3 +82,43 @@ func TestPriorityIsValid(t *testing.T) {
 		}
 	}
 }
+
+func TestFacilityString(t *testing.T) {
+	tests := []struct {
+		Facility Facility
+		Expected string
+	}{
+		{Kernel, "Kernel"},
+		{UserLevel, "User-Level"},
+		{Mail, "Mail"},
+		{System, "System"},
+		{SecurityAuthorization, "Security/authorization"},
+		{Internal, "Internal"},
+		{LinePrinter, "Line printer"},
+		{NetworkNews, "Network news"},
+		{UUCP, "UUCP"},
+		{ClockDeamon, "Clock deamon"},
+		{SecurityAuthorization, "Security/authorization"},
+		{FTPDeamon, "FTP deamon"},
+		{NTP, "NTP"},
+		{LogAudit, "Log audit"},
+		{LogAlert, "Log alert"},
+		{ClockDeamon2, "Clock deamon2"},
+		{Local0, "Local 0"},
+		{Local1, "Local 1"},
+		{Local2, "Local 2"},
+		{Local3, "Local 3"},
+		{Local4, "Local 4"},
+		{Local5, "Local 5"},
+		{Local6, "Local 6"},
+		{Local7, "Local 7"},
+	}
+
+	for _, test := range tests {
+		got := test.Facility.String()
+		if got != test.Expected {
+			t.Fatalf("Expected %#v.String() to return %s, but got %s",
+				test.Facility, test.Expected, got)
+		}
+	}
+}

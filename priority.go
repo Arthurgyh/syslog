@@ -9,6 +9,12 @@ const (
 	maxFacility = 23
 	maxSeverity = 7
 	maxPriority = maxFacility*multiplier + maxSeverity
+
+	facilityNames = "KernelUser-LevelMailSystemSecurity/authorizationInternalLine printerNetwork newsUUCPClock deamonSecurity/authorizationFTP deamonNTPLog auditLog alertClock deamon2Local 0Local 1Local 2Local 3Local 4Local 5Local 6Local 7"
+)
+
+var (
+	facilityIndices = [...]uint8{0, 6, 16, 20, 26, 48, 56, 68, 80, 84, 96, 118, 128, 131, 140, 149, 162, 169, 176, 183, 190, 197, 204, 211, 218}
 )
 
 // Priority used to calculate facility and severity.
@@ -48,6 +54,13 @@ type Facility uint8
 // IsValid checks if the facility is valid. That is between 0 and 23.
 func (facility Facility) IsValid() bool {
 	return facility <= maxFacility
+}
+
+func (facility Facility) String() string {
+	if !facility.IsValid() {
+		return "Invalid"
+	}
+	return facilityNames[facilityIndices[facility]:facilityIndices[facility+1]]
 }
 
 // Available facility levels, taken from RFC 5424.
