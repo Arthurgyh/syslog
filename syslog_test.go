@@ -116,9 +116,9 @@ func TestParseMessageNginxAccess(t *testing.T) {
 		{
 			`<190>Oct  5 12:05:15 hostname nginx: [request body_bytes_sent="612" connection="4" connection_requests="1" http_referer="-" http_user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_5) AppleWebKit/600.8.9 (KHTML, like Gecko) Version/8.0.8 Safari/600.8.9" http_x_forwarded_for="-" msec="1444039515.695" remote_addr="192.168.1.255" remote_user="-" request_length="451" request_time="0.000" status="200"]`,
 			&Message{
-				Priority:  Priority(190),
-				Facility:  Facility(23),
-				Severity:  Severity(6),
+				Priority:  CalculatePriority(Local7, Informational),
+				Facility:  Local7,
+				Severity:  Informational,
 				Timestamp: time.Date(now.Year(), 10, 5, 12, 05, 15, 0, now.Location()),
 				Hostname:  "hostname",
 				Appname:   "nginx",
@@ -141,9 +141,9 @@ func TestParseMessageNginxAccess(t *testing.T) {
 		{
 			`<190>Oct 10 12:05:15 hostname nginx: [request body_bytes_sent="612" connection="4" connection_requests="1" http_referer="-" http_user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_5) AppleWebKit/600.8.9 (KHTML, like Gecko) Version/8.0.8 Safari/600.8.9" http_x_forwarded_for="-" msec="1444039515.695" remote_addr="192.168.1.255" remote_user="-" request_length="451" request_time="0.000" status="200"]`,
 			&Message{
-				Priority:  Priority(190),
-				Facility:  Facility(23),
-				Severity:  Severity(6),
+				Priority:  CalculatePriority(Local7, Informational),
+				Facility:  Local7,
+				Severity:  Informational,
 				Timestamp: time.Date(now.Year(), 10, 10, 12, 05, 15, 0, now.Location()),
 				Hostname:  "hostname",
 				Appname:   "nginx",
