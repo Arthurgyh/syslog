@@ -13,7 +13,7 @@ var (
 	// https://tools.ietf.org/html/rfc5424 for more information.
 	RFC5424 = rfc5424Format
 
-	// Nginx is the format to parse Nginx syslog access messages. To allow the
+	// NginxAccess is the format to parse Nginx syslog access logs. To allow the
 	// Message.Data to be filled the following logformat is required to be used:
 	//
 	//	log_format syslog '[request '
@@ -30,67 +30,70 @@ var (
 	// 		']';
 	//
 	// Using this log_format allows the Message.Data["Request"] to be filled with
-	// the data from Nginx. Using the above we can acces the status using
-	// Message.Data["Request"]["status"].
+	// the data from Nginx. Using the above log_format we can access the status
+	// using Message.Data["Request"]["status"].
 	NginxAccess = nginxAccessFormat
 
-	// NginxError is the format to parse Nginx syslog error messages.
+	// NginxError is the format to parse Nginx syslog error logs.
 	NginxError = nginxErrorFormat
 )
 
+// Format: <191>10 2015-09-30T23:10:11+02:00 hostname appname procid msgid [data name="value"] message.
 var rfc5424Format = format{
-	parsePriority,
-	calculateFacility,
-	calculateSeverity,
-	parseVersion,
+	parsePriority,     //<191>
+	calculateFacility, //
+	calculateSeverity, //
+	parseVersion,      //10
 	discardSpace,
-	parseTimestamp(time.RFC3339, time.RFC3339Nano),
+	parseTimestamp(time.RFC3339, time.RFC3339Nano), // 2015-09-30T23:10:11+02:00
 	discardSpace,
-	parseHostname,
+	parseHostname, // hostname
 	discardSpace,
-	parseAppname,
+	parseAppname, // appname
 	discardSpace,
-	parseProcessID,
+	parseProcessID, // procid
 	discardSpace,
-	parseMessageID,
+	parseMessageID, // msgid
 	discardSpace,
-	parseData,
-	optional(2, discardSpace, parseMsg),
+	parseData,                           // [data name="value"]
+	optional(2, discardSpace, parseMsg), // message
 }
 
+// Format: <190>Oct  5 12:05:15 hostname nginx: [request remote_addr="192.168.1.255" status="200"].
 var nginxAccessFormat = format{
-	parsePriority,
+	parsePriority, // <190>
 	calculateFacility,
 	calculateSeverity,
-	parseTimestamp("Jan _2 15:04:05"),
-	nginxFixTimestamp,
+	parseTimestamp("Jan _2 15:04:05"), // Oct  5 12:05:15
+	nginxFixTimestamp,                 // adds years and location timezone.
 	discardSpace,
-	parseHostname,
+	parseHostname, // hostname
 	discardSpace,
-	parseAppname,
-	nginxFixAppName,
+	parseAppname,    // nginx:
+	nginxFixAppName, // nginx: -> nginx
 	discardSpace,
-	parseData,
+	parseData, // [request remote_addr="192.168.1.255" status="200"]
 }
 
+// Format: <187>Oct 13 12:31:40 hostname nginx: 2015/10/13 01:31:40 [error] 1187#1187: *46 open() "/usr/share/nginx/html/test" failed (2: No such file or directory), client: 192.168.1.255, server: localhost, request: "GET /test HTTP/1.1", host: "192.168.1.254".
 var nginxErrorFormat = format{
-	parsePriority,
+	parsePriority, // <187>
 	calculateFacility,
 	calculateSeverity,
-	parseTimestamp("Jan _2 15:04:05"),
-	nginxFixTimestamp,
+	parseTimestamp("Jan _2 15:04:05"), // Oct 13 12:31:40
+	nginxFixTimestamp,                 // adds years and location timezone.
 	discardSpace,
-	parseHostname,
+	parseHostname, // hostname
 	discardSpace,
-	parseAppname,
-	nginxFixAppName,
+	parseAppname,    // nginx:
+	nginxFixAppName, // nginx: -> nginx
 	discardSpace,
-	discard(19), // Timestamp is provided again (yyyy/mm/dd hh:mm:ss).
+	discard(19), // Timestamp is provided again (2015/10/13 01:31:40).
 	discardSpace,
 	discardByte('['),
-	discardUntil(']'), // Severity is given again ([Severity], e.g. [Error])
+	discardUntil(']'), // Severity is given again ([Error]).
 	discardSpace,
-	parseNginxMsg,
+	parseNginxMsg, // 1187#1187: *46 open() "/usr/share/nginx/html/test" failed (2: No such file or directory),
 	discardSpace,
-	parseNginxData,
+	parseNginxData, // client: 192.168.1.255, server: localhost, request: "GET /test HTTP/1.1", host: "192.168.1.254"
 }
