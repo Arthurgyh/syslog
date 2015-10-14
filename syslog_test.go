@@ -6,6 +6,7 @@ package syslog
 
 import (
 	"fmt"
+	"reflect"
 	"testing"
 	"time"
 )
@@ -94,12 +95,21 @@ func TestParseMessageRFC5424(t *testing.T) {
 	for _, test := range tests {
 		got, err := ParseMessage([]byte(test.Input), RFC5424)
 		if err != nil {
-			t.Fatalf("Unexpected error ParseMessage(%q): %s", test.Input, err.Error())
+			t.Fatalf("Unexpected error ParseMessage(%q, RFC5424): %s",
+				test.Input, err.Error())
 		}
-		expected := test.Expected
 
-		if err := testEqualMessage(got, expected); err != nil {
-			t.Fatal(err.Error())
+		// Timestamp.Location don't compare nicely in reflect.DeepEqual, but only
+		// in this function.
+		if !test.Expected.Timestamp.Equal(got.Timestamp) {
+			t.Fatalf("Expected Message.Timestamp to be %v, but got %v",
+				test.Expected.Timestamp, got.Timestamp)
+		}
+		test.Expected.Timestamp = time.Time{}
+		got.Timestamp = time.Time{}
+
+		if !reflect.DeepEqual(got, test.Expected) {
+			t.Fatalf("Expected Message to be %#v, but got %#v", got, test.Expected)
 		}
 	}
 }
@@ -201,12 +211,11 @@ func TestParseMessageNginxAccess(t *testing.T) {
 	for _, test := range tests {
 		got, err := ParseMessage([]byte(test.Input), NginxAccess)
 		if err != nil {
-			t.Fatalf("Unexpected error ParseMessage(%q): %s", test.Input, err.Error())
+			t.Fatalf("Unexpected error ParseMessage(%q, NginxAccess): %s", test.Input, err.Error())
 		}
-		expected := test.Expected
 
-		if err := testEqualMessage(got, expected); err != nil {
-			t.Fatal(err.Error())
+		if !reflect.DeepEqual(got, test.Expected) {
+			t.Fatalf("Expected Message to be %#v, but got %#v", got, test.Expected)
 		}
 	}
 }
@@ -248,69 +257,11 @@ func TestParseMessageNginxError(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Unexpected error ParseMessage(%q): %s", test.Input, err.Error())
 		}
-		expected := test.Expected
 
-		if err := testEqualMessage(got, expected); err != nil {
-			t.Fatal(err.Error())
+		if !reflect.DeepEqual(got, test.Expected) {
+			t.Fatalf("Expected Message to be %#v, but got %#v", got, test.Expected)
 		}
 	}
-}
-
-func testEqualMessage(got, expected *Message) error {
-	if expected.Priority != got.Priority {
-		return fmt.Errorf("Expected Message.Priority to be %v, but got %v",
-			expected.Priority, got.Priority)
-	} else if expected.Facility != got.Facility {
-		return fmt.Errorf("Expected Message.Facility to be %v, but got %v",
-			expected.Facility, got.Facility)
-	} else if expected.Severity != got.Severity {
-		return fmt.Errorf("Expected Message.Severity to be %v, but got %v",
-			expected.Severity, got.Severity)
-	} else if expected.Version != got.Version {
-		return fmt.Errorf("Expected Message.Version to be %v, but got %v",
-			expected.Version, got.Version)
-	} else if !expected.Timestamp.Equal(got.Timestamp) {
-		return fmt.Errorf("Expected Message.Timestamp to be %v, but got %v",
-			expected.Timestamp, got.Timestamp)
-	} else if expected.Hostname != got.Hostname {
-		return fmt.Errorf("Expected Message.Hostname to be %v, but got %v",
-			expected.Hostname, got.Hostname)
-	} else if expected.Appname != got.Appname {
-		return fmt.Errorf("Expected Message.Appname to be %v, but got %v",
-			expected.Appname, got.Appname)
-	} else if expected.ProcessID != got.ProcessID {
-		return fmt.Errorf("Expected Message.ProcessID to be %v, but got %v",
-			expected.ProcessID, got.ProcessID)
-	} else if expected.MessageID != got.MessageID {
-		return fmt.Errorf("Expected Message.MessageID to be %v, but got %v",
-			expected.MessageID, got.MessageID)
-	} else if expected.Message != got.Message {
-		return fmt.Errorf("Expected Message.Message to be %v, but got %v",
-			expected.Message, got.Message)
-	}
-
-	if len(got.Data) != len(expected.Data) {
-		return fmt.Errorf("Expected Message.Data to be %#v, but got %#v",
-			expected.Data, got.Data)
-	}
-
-	for dataID, m := range got.Data {
-		em, ok := expected.Data[dataID]
-		if !ok || len(m) != len(em) {
-			return fmt.Errorf("Expected Message.Data to be %#v, but got %#v",
-				expected.Data, got.Data)
-		}
-
-		for paramName, gotValue := range m {
-			expectedValue, ok := em[paramName]
-			if !ok || gotValue != expectedValue {
-				return fmt.Errorf("Expected Message.Data to be %#v, but got %#v",
-					expected.Data, got.Data)
-			}
-		}
-	}
-
-	return nil
 }
 
 func TestGenerateString(t *testing.T) {
