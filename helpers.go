@@ -43,12 +43,9 @@ func calculateSeverity(b *bufio.Reader, msg *Message) error {
 }
 
 // Requires Timestamp to be set on the Message.
-// This adds the years and location to the timestamp.
+// This adds the years to the timestamp.
 func nginxFixTimestamp(b *bufio.Reader, msg *Message) error {
-	now := time.Now()
-	msg.Timestamp = time.Date(now.Year(), msg.Timestamp.Month(),
-		msg.Timestamp.Day(), msg.Timestamp.Hour(), msg.Timestamp.Minute(),
-		msg.Timestamp.Second(), 0, now.Location())
+	msg.Timestamp = msg.Timestamp.AddDate(time.Now().Year(), 0, 0)
 	return nil
 }
 

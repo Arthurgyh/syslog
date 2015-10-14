@@ -65,7 +65,7 @@ var nginxAccessFormat = format{
 	calculateFacility,
 	calculateSeverity,
 	parseTimestamp("Jan _2 15:04:05"), // Oct  5 12:05:15
-	nginxFixTimestamp,                 // adds years and location timezone.
+	nginxFixTimestamp,                 // adds the years.
 	discardSpace,
 	parseHostname, // hostname
 	discardSpace,
@@ -81,7 +81,7 @@ var nginxErrorFormat = format{
 	calculateFacility,
 	calculateSeverity,
 	parseTimestamp("Jan _2 15:04:05"), // Oct 13 12:31:40
-	nginxFixTimestamp,                 // adds years and location timezone.
+	nginxFixTimestamp,                 // adds the years.
 	discardSpace,
 	parseHostname, // hostname
 	discardSpace,

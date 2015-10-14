@@ -118,7 +118,7 @@ func parseTimestampf(b *bufio.Reader, format string) (time.Time, error) {
 		return time.Time{}, err
 	}
 
-	timestamp, err := time.Parse(format, string(timeBytes))
+	timestamp, err := time.ParseInLocation(format, string(timeBytes), time.Now().Location())
 	if err != nil {
 		return time.Time{}, err
 	}
