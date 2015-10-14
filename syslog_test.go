@@ -138,30 +138,6 @@ func TestParseMessageNginxAccess(t *testing.T) {
 			},
 		},
 		{
-			`<190>Oct 10 12:05:15 hostname nginx: [request body_bytes_sent="612" connection="4" connection_requests="1" http_referer="-" http_user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_5) AppleWebKit/600.8.9 (KHTML, like Gecko) Version/8.0.8 Safari/600.8.9" http_x_forwarded_for="-" msec="1444039515.695" remote_addr="192.168.1.255" remote_user="-" request_length="451" request_time="0.000" status="200"]`,
-			&Message{
-				Priority:  CalculatePriority(Local7, Informational),
-				Facility:  Local7,
-				Severity:  Informational,
-				Timestamp: time.Date(now.Year(), 10, 10, 12, 05, 15, 0, now.Location()),
-				Hostname:  "hostname",
-				Appname:   "nginx",
-				Data: map[string]map[string]string{
-					"request": {
-						"body_bytes_sent":     "612",
-						"connection":          "4",
-						"connection_requests": "1",
-						"http_user_agent":     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_5) AppleWebKit/600.8.9 (KHTML, like Gecko) Version/8.0.8 Safari/600.8.9",
-						"msec":                "1444039515.695",
-						"remote_addr":         "192.168.1.255",
-						"request_length":      "451",
-						"request_time":        "0.000",
-						"status":              "200",
-					},
-				},
-			},
-		},
-		{
 			`<190>Oct 13 10:06:04 hostname nginx: [request body_bytes_sent="168" bytes_sent="322" connection="32" connection_requests="1" content_length="-" content_type="-" http_accept="*/*" http_accept_encoding="-" http_accept_language="-" http_content_length="-" http_content_type="-" http_host="192.168.1.254" http_origin="-" http_referer="-" http_user_agent="curl/7.43.0" http_dnt="-" http_x_do_not_track="-" http_x_requested_with="-" http_x_forwarded_host="-" http_x_forwarded_for="-" remote_addr="192.168.1.255" remote_port="54703" request_length="81" request_method="GET" request_time="0.000" sent_http_content_encoding="-" sent_http_content_language="-" sent_http_content_length="168" sent_http_location="-" status="404"]`,
 			&Message{
 				Priority:  CalculatePriority(Local7, Informational),
