@@ -32,9 +32,15 @@ var (
 	// Using this log_format allows the Message.Data["Request"] to be filled with
 	// the data from Nginx. Using the above log_format we can access the status
 	// using Message.Data["Request"]["status"].
+	//
+	// Note: because Nginx doesn't supply a timezone in the timestamp, the
+	// timezone is set to the timezone of the server parsing the log.
 	NginxAccess = nginxAccessFormat
 
 	// NginxError is the format to parse Nginx syslog error logs.
+	//
+	// Note: because Nginx doesn't supply a timezone in the timestamp, the
+	// timezone is set to the timezone of the server parsing the log.
 	NginxError = nginxErrorFormat
 )
 
