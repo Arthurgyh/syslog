@@ -6,18 +6,25 @@ package syslog
 
 import "testing"
 
+func BenchmarkParseRFC5424Minimum(b *testing.B) { benchPM(minimumInputRFC5424, RFC5424, b) }
+func BenchmarkParseRFC5424Regular(b *testing.B) { benchPM(regularInputRFC5424, RFC5424, b) }
+func BenchmarkParseRFC5424Long(b *testing.B)    { benchPM(longInputRFC5424, RFC5424, b) }
 
+func BenchmarkParseNginxAccessMinimum(b *testing.B) { benchPM(minimumInputNginxAccess, NginxAccess, b) }
+func BenchmarkParseNginxAccessRegular(b *testing.B) { benchPM(regularInputNginxAccess, NginxAccess, b) }
+func BenchmarkParseNginxAccessLong(b *testing.B)    { benchPM(longInputNginxAccess, NginxAccess, b) }
 
-func BenchmarkParseMessageMinimum(b *testing.B) { benchmarkParseMessage(minimumInput, b) }
-func BenchmarkParseMessageRegular(b *testing.B) { benchmarkParseMessage(regularInput, b) }
-func BenchmarkParseMessageLong(b *testing.B)    { benchmarkParseMessage(longInput, b) }
+func BenchmarkParseNginxErrorMinimum(b *testing.B) { benchPM(minimumInputNginxError, NginxError, b) }
+func BenchmarkParseNginxErrorRegular(b *testing.B) { benchPM(regularInputNginxError, NginxError, b) }
+func BenchmarkParseNginxErrorLong(b *testing.B)    { benchPM(longInputNginxError, NginxError, b) }
 
 var Msg *Message
 
-func benchmarkParseMessage(input []byte, b *testing.B) {
+// Benchmark parse message.
+func benchPM(input []byte, format format, b *testing.B) {
 	var msg *Message
 	for n := 0; n < b.N; n++ {
-		msg, _ = ParseMessage(input, RFC5424)
+		msg, _ = ParseMessage(input, format)
 	}
 	Msg = msg
 }
