@@ -45,6 +45,23 @@ func TestParseMessageRFC5424(t *testing.T) {
 			},
 		},
 		{
+			`<191>10 2015-09-30T23:10:11+02:00 hostname appname procid msgid [data]`,
+			&Message{
+				Priority:  CalculatePriority(Local7, Debug),
+				Facility:  Local7,
+				Severity:  Debug,
+				Version:   10,
+				Timestamp: time.Date(2015, 9, 30, 23, 10, 11, 0, locationCEST),
+				Hostname:  "hostname",
+				Appname:   "appname",
+				ProcessID: "procid",
+				MessageID: "msgid",
+				Data: map[string]map[string]string{
+					"data": {},
+				},
+			},
+		},
+		{
 			`<9>1 2000-01-01T01:01:01+00:00 h a p m [d n="v"] m`,
 			&Message{
 				Priority:  Priority(9),

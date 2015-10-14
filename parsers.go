@@ -186,6 +186,9 @@ func parseData(buf *buffer, msg *Message) error {
 		for {
 			paramName, err := parseParamName(buf)
 			if err != nil {
+				if err == io.EOF {
+					break
+				}
 				return err
 			}
 
@@ -227,7 +230,6 @@ func parseData(buf *buffer, msg *Message) error {
 
 func parseParamName(buf *buffer) (string, error) {
 	paramName, err := buf.ReadString(equalByte)
-	if err != nil && err != io.EOF {
 		return "", err
 	}
 	paramName = paramName[:len(paramName)-1]
