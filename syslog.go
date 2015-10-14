@@ -2,7 +2,8 @@
 //
 // Licensed onder the MIT license that can be found in the LICENSE file.
 
-// todo: doc package.
+// Package syslog is a package to parse syslog logs. It has formats for RFC5424
+// and Nginx access and error logs
 package syslog
 
 import (
@@ -17,7 +18,7 @@ import (
 // todo: create format error to give information on where the error is located
 // (index)?
 
-// Message represents a single message.
+// Message represents a single syslog message.
 type Message struct {
 	Priority  Priority
 	Facility  Facility
@@ -32,6 +33,7 @@ type Message struct {
 	Message   string
 }
 
+// ParseMessage parses a single syslog log.
 func ParseMessage(b []byte, format format) (*Message, error) {
 	br := bufio.NewReader(bytes.NewBuffer(b))
 
