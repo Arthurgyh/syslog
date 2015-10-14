@@ -4,7 +4,7 @@
 [![Build Status](https://travis-ci.org/Thomasdezeeuw/syslog.png?branch=master)](https://travis-ci.org/Thomasdezeeuw/syslog)
 
 Syslog is a package to parse syslog messages. It currently has formats for
-RFC5424 and Nginx.
+RFC5424 and Nginx access and error logs.
 
 ## Warning
 
