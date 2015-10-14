@@ -229,16 +229,17 @@ func parseData(buf *buffer, msg *Message) error {
 }
 
 func parseParamName(buf *buffer) (string, error) {
-	paramName, err := buf.ReadString(equalByte)
+	nameBytes, err := buf.ReadSlice(equalByte)
+	if err != nil {
 		return "", err
 	}
-	paramName = paramName[:len(paramName)-1]
+	nameBytes = nameBytes[:len(nameBytes)-1]
 
-	if len(paramName) > maxDataParamLength {
+	if len(nameBytes) > maxDataParamLength {
 		return "", newFormatError("data param name too long")
 	}
 
-	return paramName, nil
+	return string(nameBytes), nil
 }
 
 func parseParamValue(buf *buffer) (string, error) {

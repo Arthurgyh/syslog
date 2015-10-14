@@ -58,11 +58,6 @@ func (buf *buffer) ReadSlice(c byte) ([]byte, error) {
 	return buf.bytes[n:], io.EOF
 }
 
-func (buf *buffer) ReadString(c byte) (string, error) {
-	bytes, err := buf.ReadSlice(c)
-	return string(bytes), err
-}
-
 func (buf *buffer) ReadAll() []byte {
 	bytes := buf.bytes[buf.position:]
 	buf.position = buf.length

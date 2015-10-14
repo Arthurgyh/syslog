@@ -36,19 +36,13 @@ func TestBuffer(t *testing.T) {
 		t.Fatalf("Expected buf.ReadSlice(' ') to return %s, but got %s", expected, got)
 	}
 
-	if got, err := buf.ReadString(' '); err != nil {
-		t.Fatalf("Unexpected error buf.ReadString(' '): %s", err.Error())
-	} else if expected := "the "; got != expected {
-		t.Fatalf("Expected buf.ReadString(' ') to return %s, but got %s", expected, got)
-	}
-
 	if b, err := buf.Peek(100); err != io.EOF {
 		t.Fatalf("Expected buf.Peek(100) to return error %s, but got %s", err.Error(), err)
-	} else if expected, got := "very, very usefull message", string(b); got != expected {
+	} else if expected, got := "the very, very usefull message", string(b); got != expected {
 		t.Fatalf("Expected buf.Peek(100) to return %s, but got %s", expected, got)
 	}
 
-	if expected, got := "very, very usefull message", string(buf.ReadAll()); got != expected {
+	if expected, got := "the very, very usefull message", string(buf.ReadAll()); got != expected {
 		t.Fatalf("Expected buf.ReadAll() to return %s, but got %s", expected, got)
 	}
 }
