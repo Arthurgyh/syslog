@@ -11,6 +11,40 @@ import (
 	"time"
 )
 
+var (
+	longHostname    = generateString("hostname", maxHostnameLength)
+	longAppname     = generateString("appname", maxAppNameLength)
+	longProcID      = generateString("procid", maxProcessIDLength)
+	longMsgID       = generateString("msgid", maxMessageIDLength)
+	longDataID      = generateString("data", maxDataIDLength)
+	longDataID2     = generateString("data2", maxDataIDLength)
+	longParamName   = generateString("name", maxDataParamLength)
+	longParamValue  = generateString("value", 1024)
+	longParamName2  = generateString("name2", maxDataParamLength)
+	longParamValue2 = generateString("value2", 1024)
+	longMessage     = generateString("message", 1024)
+	longClient      = generateString("client", 1024)
+	longServer      = generateString("localhost", 1024)
+	longRequest     = generateString("GET / HTTP/1.1", 1024)
+	longHost        = generateString("192.168.1.254", 1024)
+
+	minimumInputRFC5424 = []byte("<0> - - - - - -")
+	regularInputRFC5424 = []byte(`<191>10 2015-09-30T23:10:11+02:00 hostname appname procid msgid [data name="value"] message`)
+	longInputRFC5424    = []byte(fmt.Sprintf(`<191>99 3000-12-31T23:59:59.999999999+14:00 %s %s %s %s [%s %s=%q][%s %s=%q %s=%q] %s`,
+		longHostname, longAppname, longProcID, longMsgID, longDataID, longParamName, longParamValue,
+		longDataID2, longParamName, longParamValue, longParamName2, longParamValue2, longMessage))
+
+	minimumInputNginxAccess = []byte("<190>Jan  1 01:01:01 h a: [request]")
+	regularInputNginxAccess = []byte(`<190>Jan  1 01:01:01 hostname nginx: [request key="value" key2="value2" key3="value3" key4="value4" key4="value4" key5="value5"]`)
+	longInputNginxAccess    = []byte(fmt.Sprintf(`<190>Dec 31 23:59:59 %s nginx: [request %s=%q %s=%q]`,
+		longHostname, longParamName, longParamValue, longParamName2, longParamValue2))
+
+	minimumInputNginxError = []byte("<184>Jan  1 01:01:01 h a: 0001/01/01 01:01:01 [Emergency] m, c: c, s: s, r: r, h: h")
+	regularInputNginxError = []byte(`<186>Jan  1 01:01:01 hostname nginx: 0001/01/01 01:01:01 [Error] message, client: 192.168.1.255, server: localhost, request: "GET / HTTP/1.1", host: "192.168.1.254"`)
+	longInputNginxError    = []byte(fmt.Sprintf(`<191>Dec 31 23:59:59 %s nginx: 2015/12/31 23:59:59 [Debug] %s, client: %s, server: %s, request: %q, host: %q`,
+		longHostname, longMessage, longClient, longServer, longRequest, longHost))
+)
+
 func TestParseMessageRFC5424(t *testing.T) {
 	t.Parallel()
 
@@ -23,9 +57,9 @@ func TestParseMessageRFC5424(t *testing.T) {
 		Input    string
 		Expected *Message
 	}{
-		{"<0> - - - - - -", &Message{}},
+		{string(minimumInputRFC5424), &Message{}},
 		{
-			`<191>10 2015-09-30T23:10:11+02:00 hostname appname procid msgid [data name="value"] message`,
+			string(regularInputRFC5424),
 			&Message{
 				Priority:  CalculatePriority(Local7, Debug),
 				Facility:  Local7,
@@ -82,9 +116,7 @@ func TestParseMessageRFC5424(t *testing.T) {
 			},
 		},
 		{
-			fmt.Sprintf(`<191>99 3000-12-31T23:59:59.999999999+14:00 %s %s %s %s [%s %s=%q][%s %s=%q %s=%q] %s`,
-				longHostname, longAppname, longProcID, longMsgID, longDataID, longParamName, longParamValue,
-				longDataID2, longParamName, longParamValue, longParamName2, longParamValue2, longMessage),
+			string(longInputRFC5424),
 			&Message{
 				Priority:  CalculatePriority(Local7, Debug),
 				Facility:  Local7,
@@ -140,6 +172,40 @@ func TestParseMessageNginxAccess(t *testing.T) {
 		Input    string
 		Expected *Message
 	}{
+		{
+			string(minimumInputNginxAccess),
+			&Message{
+				Priority:  CalculatePriority(Local7, Informational),
+				Facility:  Local7,
+				Severity:  Informational,
+				Timestamp: time.Date(now.Year(), 1, 1, 1, 1, 1, 0, now.Location()),
+				Hostname:  "h",
+				Appname:   "a",
+				Data: map[string]map[string]string{
+					"request": {},
+				},
+			},
+		},
+		{
+			string(regularInputNginxAccess),
+			&Message{
+				Priority:  CalculatePriority(Local7, Informational),
+				Facility:  Local7,
+				Severity:  Informational,
+				Timestamp: time.Date(now.Year(), 1, 1, 1, 1, 1, 0, now.Location()),
+				Hostname:  "hostname",
+				Appname:   "nginx",
+				Data: map[string]map[string]string{
+					"request": {
+						"key":  "value",
+						"key2": "value2",
+						"key3": "value3",
+						"key4": "value4",
+						"key5": "value5",
+					},
+				},
+			},
+		},
 		{
 			`<190>Oct  5 12:05:15 hostname nginx: [request body_bytes_sent="612" connection="4" connection_requests="1" http_referer="-" http_user_agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_5) AppleWebKit/600.8.9 (KHTML, like Gecko) Version/8.0.8 Safari/600.8.9" http_x_forwarded_for="-" msec="1444039515.695" remote_addr="192.168.1.255" remote_user="-" request_length="451" request_time="0.000" status="200"]`,
 			&Message{
@@ -223,6 +289,23 @@ func TestParseMessageNginxAccess(t *testing.T) {
 				},
 			},
 		},
+		{
+			string(longInputNginxAccess),
+			&Message{
+				Priority:  CalculatePriority(Local7, Informational),
+				Facility:  Local7,
+				Severity:  Informational,
+				Timestamp: time.Date(now.Year(), 12, 31, 23, 59, 59, 0, now.Location()),
+				Hostname:  longHostname,
+				Appname:   "nginx",
+				Data: map[string]map[string]string{
+					"request": {
+						longParamName:  longParamValue,
+						longParamName2: longParamValue2,
+					},
+				},
+			},
+		},
 	}
 
 	for _, test := range tests {
@@ -246,7 +329,66 @@ func TestParseMessageNginxError(t *testing.T) {
 		Input    string
 		Expected *Message
 	}{
-		// todo: add more error messages.
+		{
+			string(minimumInputNginxError),
+			&Message{
+				Priority:  CalculatePriority(Local7, Emergency),
+				Facility:  Local7,
+				Severity:  Emergency,
+				Timestamp: time.Date(now.Year(), 1, 1, 1, 1, 1, 0, now.Location()),
+				Hostname:  "h",
+				Appname:   "a",
+				Message:   `m`,
+				Data: map[string]map[string]string{
+					"data": {
+						"c": "c",
+						"s": "s",
+						"r": "r",
+						"h": "h",
+					},
+				},
+			},
+		},
+		{
+			string(regularInputNginxError),
+			&Message{
+				Priority:  CalculatePriority(Local7, Critical),
+				Facility:  Local7,
+				Severity:  Critical,
+				Timestamp: time.Date(now.Year(), 1, 1, 1, 1, 1, 0, now.Location()),
+				Hostname:  "hostname",
+				Appname:   "nginx",
+				Message:   `message`,
+				Data: map[string]map[string]string{
+					"data": {
+						"client":  "192.168.1.255",
+						"server":  "localhost",
+						"request": "GET / HTTP/1.1",
+						"host":    "192.168.1.254",
+					},
+				},
+			},
+		},
+		{
+			string(longInputNginxError),
+			&Message{
+				Priority:  CalculatePriority(Local7, Debug),
+				Facility:  Local7,
+				Severity:  Debug,
+				Timestamp: time.Date(now.Year(), 12, 31, 23, 59, 59, 0, now.Location()),
+				Hostname:  longHostname,
+				Appname:   "nginx",
+				Message:   longMessage,
+				Data: map[string]map[string]string{
+					"data": {
+						"client":  longClient,
+						"server":  longServer,
+						"request": longRequest,
+						"host":    longHost,
+					},
+				},
+			},
+		},
 		{
 			`<187>Oct 13 12:31:40 hostname nginx: 2015/10/13 01:31:40 [error] 1187#1187: *46 open() "/usr/share/nginx/html/test" failed (2: No such file or directory), client: 192.168.1.255, server: localhost, request: "GET /test HTTP/1.1", host: "192.168.1.254"`,
 			&Message{
