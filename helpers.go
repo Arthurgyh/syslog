@@ -5,7 +5,6 @@
 package syslog
 
 import (
-	"bufio"
 	"io"
 	"strings"
 	"time"
@@ -16,13 +15,13 @@ import (
 // once. So if multiple functions are passed the second part is required if the
 // first part is present.
 func optional(peekLength int, fns ...parseFunc) parseFunc {
-	return func(b *bufio.Reader, msg *Message) error {
-		if _, err := b.Peek(peekLength); err == io.EOF {
+	return func(buf *buffer, msg *Message) error {
+		if _, err := buf.Peek(peekLength); err == io.EOF {
 			return nil
 		}
 
 		for _, fn := range fns {
-			if err := fn(b, msg); err != nil {
+			if err := fn(buf, msg); err != nil {
 				return err
 			}
 		}
@@ -31,20 +30,20 @@ func optional(peekLength int, fns ...parseFunc) parseFunc {
 }
 
 // Requires Priority to be set on the Message.
-func calculateFacility(b *bufio.Reader, msg *Message) error {
+func calculateFacility(buf *buffer, msg *Message) error {
 	msg.Facility = msg.Priority.CalculateFacility()
 	return nil
 }
 
 // Requires Priority to be set on the Message.
-func calculateSeverity(b *bufio.Reader, msg *Message) error {
+func calculateSeverity(buf *buffer, msg *Message) error {
 	msg.Severity = msg.Priority.CalculateSeverity()
 	return nil
 }
 
 // Requires Timestamp to be set on the Message.
 // This adds the years to the timestamp.
-func nginxFixTimestamp(b *bufio.Reader, msg *Message) error {
+func nginxFixTimestamp(buf *buffer, msg *Message) error {
 	msg.Timestamp = msg.Timestamp.AddDate(time.Now().Year(), 0, 0)
 	return nil
 }
@@ -52,7 +51,7 @@ func nginxFixTimestamp(b *bufio.Reader, msg *Message) error {
 // Requires Appname to be set on the Message.
 // The format Nginx uses adds a colon to seperate the appname from the message
 // (or structered data), we trim that colon using this function.
-func nginxFixAppName(b *bufio.Reader, msg *Message) error {
+func nginxFixAppName(buf *buffer, msg *Message) error {
 	msg.Appname = strings.TrimSuffix(msg.Appname, ":")
 	return nil
 }

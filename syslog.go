@@ -7,8 +7,6 @@
 package syslog
 
 import (
-	"bufio"
-	"bytes"
 	"errors"
 	"io"
 	"time"
@@ -35,11 +33,11 @@ type Message struct {
 
 // ParseMessage parses a single syslog log.
 func ParseMessage(b []byte, format format) (*Message, error) {
-	br := bufio.NewReader(bytes.NewBuffer(b))
+	buf := newBuffer(b)
 
 	var msg Message
 	for _, parseFunc := range format {
-		if err := parseFunc(br, &msg); err != nil {
+		if err := parseFunc(buf, &msg); err != nil {
 			if err == io.EOF {
 				err = io.ErrUnexpectedEOF
 			}

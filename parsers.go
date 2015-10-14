@@ -5,10 +5,8 @@
 package syslog
 
 import (
-	"bufio"
 	"bytes"
 	"io"
-	"io/ioutil"
 	"strconv"
 	"time"
 )
@@ -40,14 +38,14 @@ const (
 // Threat as constant.
 var bom = []byte{239, 187, 191}
 
-type parseFunc func(*bufio.Reader, *Message) error
+type parseFunc func(*buffer, *Message) error
 
-func parsePriority(b *bufio.Reader, msg *Message) error {
-	if err := checkByte(b, priorityStart); err != nil {
+func parsePriority(buf *buffer, msg *Message) error {
+	if err := checkByte(buf, priorityStart); err != nil {
 		return err
 	}
 
-	priorityByte, err := b.ReadSlice(priorityEnd)
+	priorityByte, err := buf.ReadSlice(priorityEnd)
 	if err == io.EOF {
 		return newFormatError("priority not closed")
 	} else if err != nil {
@@ -66,8 +64,8 @@ func parsePriority(b *bufio.Reader, msg *Message) error {
 	return nil
 }
 
-func parseVersion(b *bufio.Reader, msg *Message) error {
-	versionBytes, err := b.Peek(maxVersionLength)
+func parseVersion(buf *buffer, msg *Message) error {
+	versionBytes, err := buf.Peek(maxVersionLength)
 	if err != nil {
 		return err
 	}
@@ -84,8 +82,8 @@ func parseVersion(b *bufio.Reader, msg *Message) error {
 		return newFormatError("version not a number: " + err.Error())
 	}
 
-	if _, err := b.Discard(len(versionBytes)); err != nil {
-		return err
+	if n := buf.Discard(len(versionBytes)); n != len(versionBytes) {
+		return io.EOF
 	}
 
 	msg.Version = uint(version)
@@ -93,13 +91,13 @@ func parseVersion(b *bufio.Reader, msg *Message) error {
 }
 
 func parseTimestamp(formats ...string) parseFunc {
-	return func(b *bufio.Reader, msg *Message) error {
-		if nextIsNilValue(b) {
+	return func(buf *buffer, msg *Message) error {
+		if nextIsNilValue(buf) {
 			return nil
 		}
 
 		for _, format := range formats {
-			timestamp, err := parseTimestampf(b, format)
+			timestamp, err := parseTimestampf(buf, format)
 			if err != nil {
 				continue
 			}
@@ -112,8 +110,8 @@ func parseTimestamp(formats ...string) parseFunc {
 	}
 }
 
-func parseTimestampf(b *bufio.Reader, format string) (time.Time, error) {
-	timeBytes, err := b.Peek(len(format))
+func parseTimestampf(buf *buffer, format string) (time.Time, error) {
+	timeBytes, err := buf.Peek(len(format))
 	if err != nil {
 		return time.Time{}, err
 	}
@@ -123,12 +121,14 @@ func parseTimestampf(b *bufio.Reader, format string) (time.Time, error) {
 		return time.Time{}, err
 	}
 
-	_, err = b.Discard(len(format))
+	if n := buf.Discard(len(format)); n != len(format) {
+		return time.Time{}, io.EOF
+	}
 	return timestamp, err
 }
 
-func parseHostname(b *bufio.Reader, msg *Message) error {
-	hostname, err := parseSingleValue(b, "hostname", true, maxHostnameLength)
+func parseHostname(buf *buffer, msg *Message) error {
+	hostname, err := parseSingleValue(buf, "hostname", true, maxHostnameLength)
 	if err != nil {
 		return err
 	}
@@ -137,8 +137,8 @@ func parseHostname(b *bufio.Reader, msg *Message) error {
 	return nil
 }
 
-func parseAppname(b *bufio.Reader, msg *Message) error {
-	appname, err := parseSingleValue(b, "appname", true, maxAppNameLength)
+func parseAppname(buf *buffer, msg *Message) error {
+	appname, err := parseSingleValue(buf, "appname", true, maxAppNameLength)
 	if err != nil {
 		return err
 	}
@@ -147,8 +147,8 @@ func parseAppname(b *bufio.Reader, msg *Message) error {
 	return nil
 }
 
-func parseProcessID(b *bufio.Reader, msg *Message) error {
-	processID, err := parseSingleValue(b, "processID", true, maxProcessIDLength)
+func parseProcessID(buf *buffer, msg *Message) error {
+	processID, err := parseSingleValue(buf, "processID", true, maxProcessIDLength)
 	if err != nil {
 		return err
 	}
@@ -157,8 +157,8 @@ func parseProcessID(b *bufio.Reader, msg *Message) error {
 	return nil
 }
 
-func parseMessageID(b *bufio.Reader, msg *Message) error {
-	messageID, err := parseSingleValue(b, "messageID", true, maxMessageIDLength)
+func parseMessageID(buf *buffer, msg *Message) error {
+	messageID, err := parseSingleValue(buf, "messageID", true, maxMessageIDLength)
 	if err != nil {
 		return err
 	}
@@ -167,29 +167,29 @@ func parseMessageID(b *bufio.Reader, msg *Message) error {
 	return nil
 }
 
-func parseData(b *bufio.Reader, msg *Message) error {
-	if nextIsNilValue(b) {
+func parseData(buf *buffer, msg *Message) error {
+	if nextIsNilValue(buf) {
 		return nil
-	} else if err := checkByte(b, dataStart); err != nil {
+	} else if err := checkByte(buf, dataStart); err != nil {
 		return err
 	}
 
 	var data = map[string]map[string]string{}
 	for {
-		dataID, err := parseSingleValue(b, "data-ID", false, maxDataIDLength)
+		dataID, err := parseSingleValue(buf, "data-ID", false, maxDataIDLength)
 		if err != nil {
 			return err
 		}
-		b.ReadByte() // read next space.
+		buf.ReadByte() // read next space.
 
 		data[dataID] = map[string]string{}
 		for {
-			paramName, err := parseParamName(b)
+			paramName, err := parseParamName(buf)
 			if err != nil {
 				return err
 			}
 
-			paramValue, err := parseParamValue(b)
+			paramValue, err := parseParamValue(buf)
 			if err != nil {
 				return err
 			}
@@ -198,7 +198,7 @@ func parseData(b *bufio.Reader, msg *Message) error {
 				data[dataID][paramName] = paramValue
 			}
 
-			if c, err := b.ReadByte(); err != nil {
+			if c, err := buf.ReadByte(); err != nil {
 				return err
 			} else if c == dataEnd {
 				break
@@ -208,12 +208,12 @@ func parseData(b *bufio.Reader, msg *Message) error {
 			}
 		}
 
-		if c, err := b.ReadByte(); err != nil && err != io.EOF {
+		if c, err := buf.ReadByte(); err != nil && err != io.EOF {
 			return err
 		} else if err == io.EOF {
 			break
 		} else if c == spaceByte {
-			b.UnreadByte()
+			buf.UnreadByte()
 			break
 		} else if c != dataStart {
 			return newFormatError("expected byte '" + string(spaceByte) +
@@ -225,8 +225,8 @@ func parseData(b *bufio.Reader, msg *Message) error {
 	return nil
 }
 
-func parseParamName(b *bufio.Reader) (string, error) {
-	paramName, err := b.ReadString(equalByte)
+func parseParamName(buf *buffer) (string, error) {
+	paramName, err := buf.ReadString(equalByte)
 	if err != nil && err != io.EOF {
 		return "", err
 	}
@@ -239,13 +239,13 @@ func parseParamName(b *bufio.Reader) (string, error) {
 	return paramName, nil
 }
 
-func parseParamValue(b *bufio.Reader) (string, error) {
-	if err := checkByte(b, qouteByte); err != nil {
+func parseParamValue(buf *buffer) (string, error) {
+	if err := checkByte(buf, qouteByte); err != nil {
 		return "", err
 	}
 
 	// todo: test with unescaped and escaped characters: '"', '\' and ']'.
-	paramValue, err := b.ReadSlice(qouteByte)
+	paramValue, err := buf.ReadSlice(qouteByte)
 	if err != nil && err != io.EOF {
 		return "", err
 	}
@@ -254,30 +254,28 @@ func parseParamValue(b *bufio.Reader) (string, error) {
 }
 
 // ParseMsg reads the remainding bytes and trims an options BOM.
-func parseMsg(b *bufio.Reader, msg *Message) error {
-	messageBytes, err := ioutil.ReadAll(b)
-	if err != nil {
-		return err
-	}
+func parseMsg(buf *buffer, msg *Message) error {
+	messageBytes := buf.ReadAll()
 	messageBytes = bytes.TrimPrefix(messageBytes, bom)
-
 	msg.Message = string(messageBytes)
 	return nil
 }
 
 // Discard discard the number of given bytes.
 func discard(n int) parseFunc {
-	return func(b *bufio.Reader, msg *Message) error {
-		_, err := b.Discard(n)
-		return err
+	return func(buf *buffer, msg *Message) error {
+		if nn := buf.Discard(n); nn != n {
+			return io.EOF
+		}
+		return nil
 	}
 }
 
 // DiscardByte check if the next byte is the given byte and then discards it.
 // It returns an error if the next byte is not the given byte.
 func discardByte(c byte) parseFunc {
-	return func(b *bufio.Reader, msg *Message) error {
-		return checkByte(b, c)
+	return func(buf *buffer, msg *Message) error {
+		return checkByte(buf, c)
 	}
 }
 
@@ -285,33 +283,34 @@ func discardByte(c byte) parseFunc {
 //
 // Note: the discarded bytes include the given byte.
 func discardUntil(c byte) parseFunc {
-	return func(b *bufio.Reader, msg *Message) error {
-		_, err := b.ReadSlice(c)
+	return func(buf *buffer, msg *Message) error {
+		_, err := buf.ReadSlice(c)
 		return err
 	}
 }
 
-func discardSpace(b *bufio.Reader, msg *Message) error {
-	return checkByte(b, spaceByte)
+func discardSpace(buf *buffer, msg *Message) error {
+	return checkByte(buf, spaceByte)
 }
 
-func parseSingleValue(b *bufio.Reader, name string, allowNilValue bool, maxLength int) (string, error) {
-	if allowNilValue && nextIsNilValue(b) {
+func parseSingleValue(buf *buffer, name string, allowNilValue bool, maxLength int) (string, error) {
+	if allowNilValue && nextIsNilValue(buf) {
 		return "", nil
 	}
 
-	value, err := b.ReadSlice(spaceByte)
+	value, err := buf.ReadSlice(spaceByte)
 	if err != nil && err != io.EOF {
 		return "", err
 	} else if len(value) > maxLength+1 { // space is included.
 		return "", newFormatError(name + " too long")
 	}
 
-	return string(value[:len(value)-1]), b.UnreadByte()
+	buf.UnreadByte()
+	return string(value[:len(value)-1]), nil
 }
 
-func checkByte(b *bufio.Reader, expected byte) error {
-	c, err := b.ReadByte()
+func checkByte(buf *buffer, expected byte) error {
+	c, err := buf.ReadByte()
 	if err != nil {
 		return err
 	} else if c != expected {
@@ -326,16 +325,16 @@ func checkByte(b *bufio.Reader, expected byte) error {
 // byte.
 // If the reader returns an error this function returns false, with the
 // expectation that the next read will return the same error.
-func nextIsNilValue(b *bufio.Reader) bool {
-	if c, err := b.ReadByte(); err != nil || c != nilValueByte {
-		b.UnreadByte()
+func nextIsNilValue(buf *buffer) bool {
+	if c, err := buf.ReadByte(); err != nil || c != nilValueByte {
+		buf.UnreadByte()
 		return false
 	}
 	return true
 }
 
-func parseNginxMsg(b *bufio.Reader, msg *Message) error {
-	bytes, err := b.ReadSlice(commaByte)
+func parseNginxMsg(buf *buffer, msg *Message) error {
+	bytes, err := buf.ReadSlice(commaByte)
 	if err != nil {
 		return err
 	}
@@ -344,10 +343,10 @@ func parseNginxMsg(b *bufio.Reader, msg *Message) error {
 	return nil
 }
 
-func parseNginxData(b *bufio.Reader, msg *Message) error {
+func parseNginxData(buf *buffer, msg *Message) error {
 	var data = map[string]string{}
 	for {
-		bb, err := b.ReadSlice(commaByte)
+		bb, err := buf.ReadSlice(commaByte)
 		if err != nil && err != io.EOF {
 			return err
 		}
