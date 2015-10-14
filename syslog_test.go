@@ -27,9 +27,9 @@ func TestParseMessageRFC5424(t *testing.T) {
 		{
 			`<191>10 2015-09-30T23:10:11+02:00 hostname appname procid msgid [data name="value"] message`,
 			&Message{
-				Priority:  Priority(191),
-				Facility:  Facility(23),
-				Severity:  Severity(7),
+				Priority:  CalculatePriority(Local7, Debug),
+				Facility:  Local7,
+				Severity:  Debug,
 				Version:   10,
 				Timestamp: time.Date(2015, 9, 30, 23, 10, 11, 0, locationCEST),
 				Hostname:  "hostname",
@@ -64,9 +64,9 @@ func TestParseMessageRFC5424(t *testing.T) {
 		{
 			`<9>1 2000-01-01T01:01:01+00:00 h a p m [d n="v"] m`,
 			&Message{
-				Priority:  Priority(9),
-				Facility:  Facility(1),
-				Severity:  Severity(1),
+				Priority:  CalculatePriority(UserLevel, Alert),
+				Facility:  UserLevel,
+				Severity:  Alert,
 				Version:   1,
 				Timestamp: time.Date(2000, 1, 1, 1, 1, 1, 0, time.UTC),
 				Hostname:  "h",
@@ -86,9 +86,9 @@ func TestParseMessageRFC5424(t *testing.T) {
 				longHostname, longAppname, longProcID, longMsgID, longDataID, longParamName, longParamValue,
 				longDataID2, longParamName, longParamValue, longParamName2, longParamValue2, longMessage),
 			&Message{
-				Priority:  Priority(191),
-				Facility:  Facility(23),
-				Severity:  Severity(7),
+				Priority:  CalculatePriority(Local7, Debug),
+				Facility:  Local7,
+				Severity:  Debug,
 				Version:   99,
 				Timestamp: time.Date(3000, 12, 31, 23, 59, 59, 999999999, locationLINT),
 				Hostname:  longHostname,
@@ -250,7 +250,7 @@ func TestParseMessageNginxError(t *testing.T) {
 		{
 			`<187>Oct 13 12:31:40 hostname nginx: 2015/10/13 01:31:40 [error] 1187#1187: *46 open() "/usr/share/nginx/html/test" failed (2: No such file or directory), client: 192.168.1.255, server: localhost, request: "GET /test HTTP/1.1", host: "192.168.1.254"`,
 			&Message{
-				Priority:  Priority(187),
+				Priority:  CalculatePriority(Local7, Error),
 				Facility:  Local7,
 				Severity:  Error,
 				Timestamp: time.Date(now.Year(), 10, 13, 12, 31, 40, 0, now.Location()),
