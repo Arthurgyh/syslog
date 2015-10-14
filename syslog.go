@@ -13,10 +13,9 @@ import (
 	"time"
 )
 
-// todo: think of package name.
-// todo: prefix errors with package name.
 // todo: only allow PRINTUSASCII, currently not checked: %d33-126.
-// todo: add Message.String/Bytes and text/json (un)marhsalers?
+// todo: create format error to give information on where the error is located
+// (index)?
 
 // Message represents a single message.
 type Message struct {
@@ -48,9 +47,6 @@ func ParseMessage(b []byte, format format) (*Message, error) {
 
 	return &msg, nil
 }
-
-// todo: create format error to give information on where the error is located
-// (index)?
 
 func newFormatError(msg string) error {
 	return errors.New("syslog: format incorrect: " + msg)
