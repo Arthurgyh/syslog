@@ -1,3 +1,7 @@
+// Copyright (C) 2015 Thomas de Zeeuw.
+//
+// Licensed under the MIT license that can be found in the LICENSE file.
+
 package syslog
 
 import "io"

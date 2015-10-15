@@ -1,6 +1,6 @@
 // Copyright (C) 2015 Thomas de Zeeuw.
 //
-// Licensed onder the MIT license that can be found in the LICENSE file.
+// Licensed under the MIT license that can be found in the LICENSE file.
 
 // Package syslog is a package to parse syslog logs. It has formats for RFC5424
 // and Nginx access and error logs
