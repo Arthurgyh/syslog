@@ -51,3 +51,13 @@ func ParseMessage(b []byte, format format) (*Message, error) {
 func newFormatError(msg string) error {
 	return errors.New("syslog: format incorrect: " + msg)
 }
+
+// Parser parses a single syslog log, with an already defined format.
+type Parser func([]byte) (*Message, error)
+
+// NewParser creates a new parser with the given format.
+func NewParser(format format) Parser {
+	return func(b []byte) (*Message, error) {
+		return ParseMessage(b, format)
+	}
+}

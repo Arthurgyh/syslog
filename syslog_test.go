@@ -149,7 +149,7 @@ func TestParseMessageRFC5424(t *testing.T) {
 		}
 
 		// Timestamp.Location don't compare nicely in reflect.DeepEqual, but only
-		// in this function.
+		// in this function and TestParser.
 		if !test.Expected.Timestamp.Equal(got.Timestamp) {
 			t.Fatalf("Expected Message.Timestamp to be %v, but got %v",
 				test.Expected.Timestamp, got.Timestamp)
@@ -416,6 +416,55 @@ func TestParseMessageNginxError(t *testing.T) {
 		if err != nil {
 			t.Fatalf("Unexpected error ParseMessage(%q): %s", test.Input, err.Error())
 		}
+
+		if !reflect.DeepEqual(got, test.Expected) {
+			t.Fatalf("Expected Message to be %#v, but got %#v", got, test.Expected)
+		}
+	}
+}
+
+func TestParser(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		Input    string
+		Expected *Message
+	}{
+		{string(minimumInputRFC5424), &Message{}},
+		{
+			`<191>10 2015-09-30T23:10:11+00:00 hostname appname procid msgid [data]`,
+			&Message{
+				Priority:  CalculatePriority(Local7, Debug),
+				Facility:  Local7,
+				Severity:  Debug,
+				Version:   10,
+				Timestamp: time.Date(2015, 9, 30, 23, 10, 11, 0, time.UTC),
+				Hostname:  "hostname",
+				Appname:   "appname",
+				ProcessID: "procid",
+				MessageID: "msgid",
+				Data: map[string]map[string]string{
+					"data": {},
+				},
+			},
+		},
+	}
+
+	parse := NewParser(RFC5424)
+
+	for _, test := range tests {
+		got, err := parse([]byte(test.Input))
+		if err != nil {
+			t.Fatalf("Unexpected error parse(%q): %s",
+				test.Input, err.Error())
+		}
+
+		if !test.Expected.Timestamp.Equal(got.Timestamp) {
+			t.Fatalf("Expected Message.Timestamp to be %v, but got %v",
+				test.Expected.Timestamp, got.Timestamp)
+		}
+		test.Expected.Timestamp = time.Time{}
+		got.Timestamp = time.Time{}
 
 		if !reflect.DeepEqual(got, test.Expected) {
 			t.Fatalf("Expected Message to be %#v, but got %#v", got, test.Expected)
