@@ -114,6 +114,7 @@ func TestFacilityString(t *testing.T) {
 		{Local5, "Local 5"},
 		{Local6, "Local 6"},
 		{Local7, "Local 7"},
+		{Facility(24), "Invalid"},
 	}
 
 	for _, test := range tests {
@@ -140,6 +141,7 @@ func TestSeverityString(t *testing.T) {
 		{Notice, "Notice"},
 		{Informational, "Informational"},
 		{Debug, "Debug"},
+		{Severity(9), "Invalid"},
 	}
 
 	for _, test := range tests {
