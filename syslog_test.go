@@ -43,15 +43,13 @@ var (
 	regularInputNginxError = []byte(`<186>Jan  1 01:01:01 hostname nginx: 0001/01/01 01:01:01 [Error] message, client: 192.168.1.255, server: localhost, request: "GET / HTTP/1.1", host: "192.168.1.254"`)
 	longInputNginxError    = []byte(fmt.Sprintf(`<191>Dec 31 23:59:59 %s nginx: 2015/12/31 23:59:59 [Debug] %s, client: %s, server: %s, request: %q, host: %q`,
 		longHostname, longMessage, longClient, longServer, longRequest, longHost))
+
+	locationCEST, _ = time.LoadLocation("Europe/Amsterdam")
+	locationLINT, _ = time.LoadLocation("Pacific/Kiritimati")
 )
 
 func TestParseMessageRFC5424(t *testing.T) {
 	t.Parallel()
-
-	var (
-		locationCEST, _ = time.LoadLocation("Europe/Amsterdam")
-		locationLINT, _ = time.LoadLocation("Pacific/Kiritimati")
-	)
 
 	tests := []struct {
 		Input    string
@@ -468,6 +466,75 @@ func TestParser(t *testing.T) {
 
 		if !reflect.DeepEqual(got, test.Expected) {
 			t.Fatalf("Expected Message to be %#v, but got %#v", got, test.Expected)
+		}
+	}
+}
+
+func TestMessage(t *testing.T) {
+	tests := []struct {
+		Msg      *Message
+		Expected string
+	}{
+		{&Message{}, string(minimumInputRFC5424)},
+		{
+			&Message{
+				Priority:  CalculatePriority(Local7, Debug),
+				Facility:  Local7,
+				Severity:  Debug,
+				Version:   1,
+				Timestamp: time.Date(2015, 10, 16, 14, 38, 12, 0, locationCEST),
+				Hostname:  "hostname",
+				Appname:   "appname",
+				ProcessID: "procid",
+				MessageID: "msgid",
+				Data: map[string]map[string]string{
+					"data": {
+						"name": "value",
+					},
+				},
+				Message: "message",
+			},
+			`<191>1 2015-10-16T14:38:12+02:00 hostname appname procid msgid [data name="value"] message`,
+		},
+		{
+			&Message{
+				Priority:  CalculatePriority(Local7, Debug),
+				Facility:  Local7,
+				Severity:  Debug,
+				Version:   1,
+				Timestamp: time.Date(2015, 10, 16, 14, 38, 36, 0, time.UTC),
+				Hostname:  "hostname",
+				Appname:   "appname",
+				ProcessID: "procid",
+				MessageID: "msgid",
+				Data: map[string]map[string]string{
+					"dataID": {
+						"name":  "value",
+						"name2": "value2",
+					},
+					"dataID2": {
+						"name":  "value",
+						"name2": "value2",
+					},
+				},
+				Message: "message",
+			},
+			`<191>1 2015-10-16T14:38:36Z hostname appname procid msgid [dataID name="value" name2="value2"][dataID2 name="value" name2="value2"] message`,
+		},
+	}
+
+	for _, test := range tests {
+		got := test.Msg.String()
+		gotBytes := string(test.Msg.Bytes())
+
+		if got != gotBytes {
+			t.Fatalf("Expected msg.String() and msg.Bytes to return the same value, "+
+				"but got %s and %s", got, gotBytes)
+		}
+
+		if got != test.Expected {
+			t.Fatalf("Expected msg.String() and msg.Bytes() to return %s, but got %s",
+				test.Expected, got)
 		}
 	}
 }
