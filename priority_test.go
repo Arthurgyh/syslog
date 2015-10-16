@@ -84,6 +84,8 @@ func TestPriorityIsValid(t *testing.T) {
 }
 
 func TestFacilityString(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		Facility Facility
 		Expected string
@@ -124,6 +126,8 @@ func TestFacilityString(t *testing.T) {
 }
 
 func TestSeverityString(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		Severity Severity
 		Expected string

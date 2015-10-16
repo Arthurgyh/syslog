@@ -471,6 +471,8 @@ func TestParser(t *testing.T) {
 }
 
 func TestMessage(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		Msg      *Message
 		Expected string
