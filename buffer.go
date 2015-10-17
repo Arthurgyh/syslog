@@ -22,13 +22,12 @@ func (buf *buffer) Discard(n int) (discarded int) {
 }
 
 func (buf *buffer) Peek(n int) ([]byte, error) {
-	n = buf.position + n
 	var err error
-	if n > buf.length {
-		n = buf.length
+	if max := buf.maxRead(); n > max {
+		n = max
 		err = io.EOF
 	}
-	return buf.bytes[buf.position:n], err
+	return buf.bytes[buf.position : buf.position+n], err
 }
 
 func (buf *buffer) ReadByte() (byte, error) {
