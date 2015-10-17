@@ -353,21 +353,20 @@ func parseNginxData(buf *buffer, msg *Message) error {
 		if err != nil && err != io.EOF {
 			return err
 		}
+		bb = bytes.TrimSuffix(bb, []byte{commaByte})
 
-		// todo: optizime this. Possible lines:
-		// `key: value,`
-		// `key: value`
-		// ` key: value`
-		// `key: "value",`
-		// `key: "value"`
-		// ` key: "value"`
 		keyValue := bytes.SplitN(bb, []byte{colonByte}, 2)
-		key := bytes.TrimPrefix(keyValue[0], []byte{spaceByte})
-		value := keyValue[1]
-		value = bytes.TrimPrefix(value, []byte{spaceByte})
-		value = bytes.TrimSuffix(value, []byte{commaByte})
-		value = bytes.TrimPrefix(value, []byte{qouteByte})
-		value = bytes.TrimSuffix(value, []byte{qouteByte})
+		if len(keyValue) != 2 {
+			// todo: improve error message, be more clear about it.
+			return newFormatError("Expected to encounter ':', but didn't find one")
+		}
+
+		key := bytes.TrimSpace(keyValue[0])
+		value := bytes.TrimSpace(keyValue[1])
+
+		qouteSlice := []byte{qouteByte}
+		key = bytes.TrimPrefix(bytes.TrimSuffix(key, qouteSlice), qouteSlice)
+		value = bytes.TrimPrefix(bytes.TrimSuffix(value, qouteSlice), qouteSlice)
 
 		data[string(key)] = string(value)
 

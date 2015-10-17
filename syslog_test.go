@@ -388,7 +388,7 @@ func TestParseMessageNginxError(t *testing.T) {
 			},
 		},
 		{
-			`<187>Oct 13 12:31:40 hostname nginx: 2015/10/13 01:31:40 [error] 1187#1187: *46 open() "/usr/share/nginx/html/test" failed (2: No such file or directory), client: 192.168.1.255, server: localhost, request: "GET /test HTTP/1.1", host: "192.168.1.254"`,
+			`<187>Oct 13 12:31:40 hostname nginx: 2015/10/13 01:31:40 [error] 1187#1187: *46 open() "/usr/share/nginx/html/test" failed (2: No such file or directory), client: 192.168.1.255, "server": "localhost", request: "GET /test HTTP/1.1", host: "192.168.1.254" `,
 			&Message{
 				Priority:  CalculatePriority(Local7, Error),
 				Facility:  Local7,
@@ -478,6 +478,20 @@ func TestMessage(t *testing.T) {
 		Expected string
 	}{
 		{&Message{}, string(minimumInputRFC5424)},
+		{
+			&Message{
+				Priority:  CalculatePriority(Local7, Debug),
+				Facility:  Local7,
+				Severity:  Debug,
+				Timestamp: time.Date(2015, 10, 16, 14, 38, 12, 0, time.UTC),
+				Hostname:  "hostname",
+				Appname:   "appname",
+				Data: map[string]map[string]string{
+					"data": {},
+				},
+			},
+			`<191> 2015-10-16T14:38:12Z hostname appname - - [data]`,
+		},
 		{
 			&Message{
 				Priority:  CalculatePriority(Local7, Debug),
