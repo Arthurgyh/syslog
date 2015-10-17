@@ -14,12 +14,13 @@ var (
 	RFC5424 = rfc5424Format
 
 	// NginxAccess is the format to parse Nginx syslog access logs. To allow the
-	// Message.Data to be filled the following logformat is required to be used:
+	// Message.Data to be filled the following `log_format` is required to be
+	// used in the configuration of Nginx:
 	//
 	//	log_format syslog '[request '
 	//		'variable="$variable" '
 	//		'variable2="$variable2" '
-	// 		']';
+	//		']';
 	//
 	// For example:
 	//
@@ -27,20 +28,20 @@ var (
 	//		'remote_addr="$remote_addr" '
 	//		'request_time="$request_time" '
 	//		'status="$status"'
-	// 		']';
+	//		']';
 	//
-	// Using this log_format allows the Message.Data["Request"] to be filled with
-	// the data from Nginx. Using the above log_format we can access the status
+	// Using this `log_format` the Message.Data["Request"] will be filled with
+	// the data from Nginx. Using the above `log_format` we can access the status
 	// using Message.Data["Request"]["status"].
 	//
-	// Note: because Nginx doesn't supply a timezone in the timestamp, the
-	// timezone is set to the timezone of the server parsing the log.
+	// Note: because Nginx doesn't supply a timezone or year in the logs, the
+	// timezone and current year from the server that is parsing the log is used.
 	NginxAccess = nginxAccessFormat
 
 	// NginxError is the format to parse Nginx syslog error logs.
 	//
-	// Note: because Nginx doesn't supply a timezone in the timestamp, the
-	// timezone is set to the timezone of the server parsing the log.
+	// Note: please see the note at NginxAccess about the timezone and year for
+	// the parsing of the timestamp.
 	NginxError = nginxErrorFormat
 )
 
