@@ -146,16 +146,7 @@ func TestParseMessageRFC5424(t *testing.T) {
 				test.Input, err.Error())
 		}
 
-		// Timestamp.Location don't compare nicely in reflect.DeepEqual, but only
-		// in this function and TestParser.
-		if !test.Expected.Timestamp.Equal(got.Timestamp) {
-			t.Fatalf("Expected Message.Timestamp to be %v, but got %v",
-				test.Expected.Timestamp, got.Timestamp)
-		}
-		test.Expected.Timestamp = time.Time{}
-		got.Timestamp = time.Time{}
-
-		if !reflect.DeepEqual(got, test.Expected) {
+		if !messagesAreEqual(got, test.Expected) {
 			t.Fatalf("Expected Message to be %#v, but got %#v", got, test.Expected)
 		}
 	}
@@ -312,7 +303,7 @@ func TestParseMessageNginxAccess(t *testing.T) {
 			t.Fatalf("Unexpected error ParseMessage(%q, NginxAccess): %s", test.Input, err.Error())
 		}
 
-		if !reflect.DeepEqual(got, test.Expected) {
+		if !messagesAreEqual(got, test.Expected) {
 			t.Fatalf("Expected Message to be %#v, but got %#v", got, test.Expected)
 		}
 	}
@@ -415,7 +406,7 @@ func TestParseMessageNginxError(t *testing.T) {
 			t.Fatalf("Unexpected error ParseMessage(%q): %s", test.Input, err.Error())
 		}
 
-		if !reflect.DeepEqual(got, test.Expected) {
+		if !messagesAreEqual(got, test.Expected) {
 			t.Fatalf("Expected Message to be %#v, but got %#v", got, test.Expected)
 		}
 	}
@@ -457,14 +448,7 @@ func TestParser(t *testing.T) {
 				test.Input, err.Error())
 		}
 
-		if !test.Expected.Timestamp.Equal(got.Timestamp) {
-			t.Fatalf("Expected Message.Timestamp to be %v, but got %v",
-				test.Expected.Timestamp, got.Timestamp)
-		}
-		test.Expected.Timestamp = time.Time{}
-		got.Timestamp = time.Time{}
-
-		if !reflect.DeepEqual(got, test.Expected) {
+		if !messagesAreEqual(got, test.Expected) {
 			t.Fatalf("Expected Message to be %#v, but got %#v", got, test.Expected)
 		}
 	}
@@ -553,6 +537,21 @@ func TestMessage(t *testing.T) {
 				test.Expected, got)
 		}
 	}
+}
+
+func messagesAreEqual(got, expected *Message) bool {
+	// Timestamp.Location doesn't compare nicely in reflect.DeepEqual.
+	if !expected.Timestamp.Equal(got.Timestamp) {
+		return false
+	}
+	expected.Timestamp = time.Time{}
+	got.Timestamp = time.Time{}
+
+	if !reflect.DeepEqual(got, expected) {
+		return false
+	}
+
+	return true
 }
 
 func TestGenerateString(t *testing.T) {
