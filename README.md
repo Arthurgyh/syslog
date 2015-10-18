@@ -9,7 +9,7 @@ RFC5424 and Nginx access and error logs.
 ## Warning
 
 This package is very much in the alpha stage. This API might change, but more
-importantly this parsing formats might not be 100% correct and might too strict.
+importantly the parsing formats might not be 100% correct and might too strict.
 
 ## Installation
 
