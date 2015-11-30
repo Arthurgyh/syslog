@@ -90,7 +90,7 @@ func TestBufferReadLastByte(t *testing.T) {
 	}
 }
 
-func TestBufferFirstUnreadByte(t *testing.T) {
+func TestBufferUnreadFirstByte(t *testing.T) {
 	t.Parallel()
 
 	buf := newBuffer([]byte{})
