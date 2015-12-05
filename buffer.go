@@ -55,7 +55,7 @@ func (buf *buffer) UnreadByte() {
 }
 
 // ReadSlice reads until the first appears of the given char. If the character
-// is not found it returns the remaing buffer and an io.EOF.
+// is not found it returns the remaing buffer and io.EOF as error.
 func (buf *buffer) ReadSlice(c byte) ([]byte, error) {
 	for i, cc := range buf.bytes[buf.position:] {
 		if cc == c {
