@@ -313,6 +313,7 @@ func discardUntil(c byte) parseFunc {
 	}
 }
 
+// Shortcut for checkByte with a space.
 func discardSpace(buf *buffer, msg *Message) error {
 	return checkByte(buf, spaceByte)
 }
