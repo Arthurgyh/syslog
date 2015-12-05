@@ -153,6 +153,24 @@ func TestParseProcessID(t *testing.T) {
 	}
 }
 
+func TestParseMessageID(t *testing.T) {
+	t.Parallel()
+
+	tests := []ParseFuncTest{
+		{"", &Message{}, io.EOF},
+		{"-", &Message{MessageID: ""}, nil},
+		{"m", &Message{MessageID: "m"}, nil},
+		{"msgID", &Message{MessageID: "msgID"}, nil},
+		{"messageID ", &Message{MessageID: "messageID"}, nil},
+
+		{generateString("messageID", maxHostnameLength+1), nil, newFormatError(1, "messageID too long")},
+	}
+
+	if err := testParseFunc(parseMessageID, tests); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func testParseFunc(fn parseFunc, tests []ParseFuncTest) error {
 	for _, test := range tests {
 		buf := newBuffer([]byte(test.Input))
