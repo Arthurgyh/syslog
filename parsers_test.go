@@ -257,6 +257,21 @@ func TestDiscardSpace(t *testing.T) {
 	}
 }
 
+func TestParseNginxMsg(t *testing.T) {
+	t.Parallel()
+
+	tests := []ParseFuncTest{
+		{"", &Message{}, io.EOF, ""},
+		{"msg", &Message{}, io.EOF, ""},
+		{"msg,", &Message{Message: "msg"}, nil, ""},
+		{" message ,", &Message{Message: "message"}, nil, ""},
+	}
+
+	if err := testParseFunc(parseNginxMsg, tests); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func testParseFunc(fn parseFunc, tests []ParseFuncTest) error {
 	for _, test := range tests {
 		buf := newBuffer([]byte(test.Input))
