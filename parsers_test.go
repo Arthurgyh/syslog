@@ -207,6 +207,23 @@ func TestDiscard(t *testing.T) {
 	}
 }
 
+func TestDiscardByte(t *testing.T) {
+	t.Parallel()
+
+	tests := []ParseFuncTest{
+		{"", &Message{}, io.EOF, ""},
+		{"a", &Message{}, nil, ""},
+		{"abc", &Message{}, nil, "bc"},
+
+		{"bc", &Message{}, newFormatError(1, "expected byte 'a', but got 'b'"), ""},
+		{"cba", &Message{}, newFormatError(1, "expected byte 'a', but got 'c'"), ""},
+	}
+
+	if err := testParseFunc(discardByte('a'), tests); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func testParseFunc(fn parseFunc, tests []ParseFuncTest) error {
 	for _, test := range tests {
 		buf := newBuffer([]byte(test.Input))

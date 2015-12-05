@@ -302,7 +302,8 @@ func discardByte(c byte) parseFunc {
 	}
 }
 
-// DiscardUntil discard all bytes until the given byte is found.
+// DiscardUntil discard all bytes until the given byte is found. If the bytes is
+// not found the remainder of the buffer will be discarded.
 //
 // Note: the discarded bytes include the given byte.
 func discardUntil(c byte) parseFunc {
@@ -348,11 +349,12 @@ func parseSingleValue(buf *buffer, name string, allowNilValue bool, maxLength in
 }
 
 func checkByte(buf *buffer, expected byte) error {
+	startPos := buf.Pos()
 	c, err := buf.ReadByte()
 	if err != nil {
 		return err
 	} else if c != expected {
-		return newFormatError(buf.Pos(), "expected byte '"+string(expected)+
+		return newFormatError(startPos, "expected byte '"+string(expected)+
 			"', but got '"+string(c)+"'")
 	}
 	return nil
