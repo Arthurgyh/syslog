@@ -320,14 +320,29 @@ func parseSingleValue(buf *buffer, name string, allowNilValue bool, maxLength in
 	}
 
 	value, err := buf.ReadSlice(spaceByte)
-	if err != nil && err != io.EOF {
+	l := len(value)
+	if (err != nil && err != io.EOF) || (err == io.EOF && l == 0) {
 		return "", err
-	} else if len(value) > maxLength+1 { // space is included.
-		return "", newFormatError(buf.Pos()-len(value), name+" too long")
 	}
 
-	buf.UnreadByte()
-	return string(value[:len(value)-1]), nil
+	if err != io.EOF {
+		// Space is included.
+		maxLength++
+	}
+	if l > maxLength {
+		return "", newFormatError(buf.Pos()-l+1, name+" too long")
+	}
+
+	// todo: this is really a temporary workaround because parseData uses this in
+	// Data-ID. In case of no (empty) data it will be "[Data-ID]", so the value at
+	// this point will be "Data-ID]", and we need to unread "]". But I'm not sure
+	// this is the best solution.
+	if b := value[l-1]; b == spaceByte || b == dataEnd {
+		value = value[:l-1]
+		buf.UnreadByte()
+	}
+
+	return string(value), nil
 }
 
 func checkByte(buf *buffer, expected byte) error {
@@ -347,11 +362,15 @@ func checkByte(buf *buffer, expected byte) error {
 // If the reader returns an error this function returns false, with the
 // expectation that the next read will return the same error.
 func nextIsNilValue(buf *buffer) bool {
-	if c, err := buf.ReadByte(); err != nil || c != nilValueByte {
-		buf.UnreadByte()
-		return false
+	b, err := buf.ReadByte()
+	if err == nil && b == nilValueByte {
+		return true
 	}
-	return true
+
+	if err != io.EOF {
+		buf.UnreadByte()
+	}
+	return false
 }
 
 func parseNginxMsg(buf *buffer, msg *Message) error {

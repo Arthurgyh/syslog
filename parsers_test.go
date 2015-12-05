@@ -99,6 +99,24 @@ func TestParseTimestampNoTimestamps(t *testing.T) {
 	parseTimestamp()
 }
 
+func TestParseHostname(t *testing.T) {
+	t.Parallel()
+
+	tests := []ParseFuncTest{
+		{"", &Message{}, io.EOF},
+		{"-", &Message{Hostname: ""}, nil},
+		{"h", &Message{Hostname: "h"}, nil},
+		{"host", &Message{Hostname: "host"}, nil},
+		{"hostname ", &Message{Hostname: "hostname"}, nil},
+
+		{generateString("hostname", maxHostnameLength+1), nil, newFormatError(1, "hostname too long")},
+	}
+
+	if err := testParseFunc(parseHostname, tests); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func testParseFunc(fn parseFunc, tests []ParseFuncTest) error {
 	for _, test := range tests {
 		buf := newBuffer([]byte(test.Input))
