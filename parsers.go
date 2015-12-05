@@ -48,17 +48,26 @@ func parsePriority(buf *buffer, msg *Message) error {
 	startPos := buf.Pos()
 	priorityBytes, err := buf.ReadSlice(priorityEnd)
 	if err == io.EOF {
-		return newFormatError(startPos, "priority not closed")
+		pos := startPos + maxPriorityLength
+		if pos > buf.Pos() {
+			pos = buf.Pos()
+		}
+		return newFormatError(pos, "priority not closed")
 	} else if err != nil {
 		return err
-	} else if len(priorityBytes) > maxPriorityLength+1 { // closing tag is included.
-		return newFormatError(startPos, "priority too long")
+	} else if len(priorityBytes) > maxPriorityLength+1 { // Closing tag included.
+		return newFormatError(startPos+maxPriorityLength, "priority too long")
 	}
+
 	priorityBytes = priorityBytes[:len(priorityBytes)-1]
+	if len(priorityBytes) == 0 {
+		return newFormatError(startPos, "priority can't be empty")
+	}
 
 	priority, err := strconv.Atoi(string(priorityBytes))
 	if err != nil {
-		return newFormatError(startPos, "priority not a number: "+err.Error())
+		return newFormatError(startPos, "priority not a number: "+
+			string(priorityBytes))
 	}
 
 	msg.Priority = Priority(priority)
@@ -319,7 +328,7 @@ func checkByte(buf *buffer, expected byte) error {
 	if err != nil {
 		return err
 	} else if c != expected {
-		return newFormatError(buf.Pos()-1, "expected byte '"+string(expected)+
+		return newFormatError(buf.Pos(), "expected byte '"+string(expected)+
 			"', but got '"+string(c)+"'")
 	}
 	return nil
