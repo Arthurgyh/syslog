@@ -147,7 +147,8 @@ func TestParseMessageRFC5424(t *testing.T) {
 		}
 
 		if !messagesAreEqual(got, test.Expected) {
-			t.Fatalf("Expected Message to be %#v, but got %#v", got, test.Expected)
+			t.Fatalf("Expected ParseMessage(%q, RFC5424) to return Message %#v, but got %#v",
+				test.Input, test.Expected, got)
 		}
 	}
 }
@@ -300,11 +301,13 @@ func TestParseMessageNginxAccess(t *testing.T) {
 	for _, test := range tests {
 		got, err := ParseMessage([]byte(test.Input), NginxAccess)
 		if err != nil {
-			t.Fatalf("Unexpected error ParseMessage(%q, NginxAccess): %s", test.Input, err.Error())
+			t.Fatalf("Unexpected error ParseMessage(%q, NginxAccess): %s",
+				test.Input, err.Error())
 		}
 
 		if !messagesAreEqual(got, test.Expected) {
-			t.Fatalf("Expected Message to be %#v, but got %#v", got, test.Expected)
+			t.Fatalf("Expected ParseMessage(%q, NginxAccess) to return Message %#v, but got %#v",
+				test.Input, test.Expected, got)
 		}
 	}
 }
@@ -407,7 +410,8 @@ func TestParseMessageNginxError(t *testing.T) {
 		}
 
 		if !messagesAreEqual(got, test.Expected) {
-			t.Fatalf("Expected Message to be %#v, but got %#v", got, test.Expected)
+			t.Fatalf("Expected ParseMessage(%q, NginxError) to return Message %#v, but got %#v",
+				test.Input, test.Expected, got)
 		}
 	}
 }
@@ -449,7 +453,8 @@ func TestParser(t *testing.T) {
 		}
 
 		if !messagesAreEqual(got, test.Expected) {
-			t.Fatalf("Expected Message to be %#v, but got %#v", got, test.Expected)
+			t.Fatalf("Expected parse(%q) to return Message %#v, but got %#v",
+				test.Input, test.Expected, got)
 		}
 	}
 }
