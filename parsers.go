@@ -104,6 +104,10 @@ func parseVersion(buf *buffer, msg *Message) error {
 }
 
 func parseTimestamp(formats ...string) parseFunc {
+	if len(formats) == 0 {
+		panic("syslog: no formats supplied to parseTimestamp")
+	}
+
 	return func(buf *buffer, msg *Message) error {
 		if nextIsNilValue(buf) {
 			return nil

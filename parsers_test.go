@@ -76,6 +76,29 @@ func TestParseTimestamp(t *testing.T) {
 	}
 }
 
+func TestParseTimestampNoTimestamps(t *testing.T) {
+	t.Parallel()
+
+	defer func() {
+		recv := recover()
+		if recv == nil {
+			t.Fatal("Expected parseTimestamp() to panic, but it didn't")
+		}
+		expected := "syslog: no formats supplied to parseTimestamp"
+		got, ok := recv.(string)
+		if !ok {
+			t.Fatalf("Unexpected panic: %v", recv)
+		}
+
+		if got != expected {
+			t.Fatalf("Expected parseTimestamp() to panic with message %s, but got %s",
+				expected, got)
+		}
+	}()
+
+	parseTimestamp()
+}
+
 func testParseFunc(fn parseFunc, tests []ParseFuncTest) error {
 	for _, test := range tests {
 		buf := newBuffer([]byte(test.Input))
