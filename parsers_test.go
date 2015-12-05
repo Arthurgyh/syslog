@@ -192,6 +192,21 @@ func TestParseMsg(t *testing.T) {
 	}
 }
 
+func TestDiscard(t *testing.T) {
+	t.Parallel()
+
+	tests := []ParseFuncTest{
+		{"", &Message{}, io.EOF, ""},
+		{"1234", &Message{}, io.EOF, ""},
+		{"12345", &Message{}, nil, ""},
+		{"123456", &Message{}, nil, "6"},
+	}
+
+	if err := testParseFunc(discard(5), tests); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func testParseFunc(fn parseFunc, tests []ParseFuncTest) error {
 	for _, test := range tests {
 		buf := newBuffer([]byte(test.Input))
