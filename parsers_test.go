@@ -117,6 +117,24 @@ func TestParseHostname(t *testing.T) {
 	}
 }
 
+func TestParseAppname(t *testing.T) {
+	t.Parallel()
+
+	tests := []ParseFuncTest{
+		{"", &Message{}, io.EOF},
+		{"-", &Message{Appname: ""}, nil},
+		{"a", &Message{Appname: "a"}, nil},
+		{"app", &Message{Appname: "app"}, nil},
+		{"appname ", &Message{Appname: "appname"}, nil},
+
+		{generateString("appname", maxAppNameLength+1), nil, newFormatError(1, "appname too long")},
+	}
+
+	if err := testParseFunc(parseAppname, tests); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func testParseFunc(fn parseFunc, tests []ParseFuncTest) error {
 	for _, test := range tests {
 		buf := newBuffer([]byte(test.Input))
