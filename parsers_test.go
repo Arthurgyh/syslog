@@ -10,28 +10,31 @@ import (
 	"time"
 )
 
+// todo: add tests for all parsers with left over values.
+
 type ParseFuncTest struct {
-	Input         string
-	Expected      *Message
-	ExpectedError error
+	Input            string
+	Expected         *Message
+	ExpectedError    error
+	ExpectedLeftover string
 }
 
 func TestParsePriority(t *testing.T) {
 	t.Parallel()
 
 	tests := []ParseFuncTest{
-		{"<0>", &Message{Priority: 0}, nil},
-		{"<1>", &Message{Priority: 1}, nil},
-		{"<100>", &Message{Priority: 100}, nil},
-		{"<191>", &Message{Priority: 191}, nil},
+		{"<0>", &Message{Priority: 0}, nil, ""},
+		{"<1>", &Message{Priority: 1}, nil, ""},
+		{"<100>", &Message{Priority: 100}, nil, ""},
+		{"<191>", &Message{Priority: 191}, nil, ""},
 
-		{"", nil, io.EOF},
-		{"!", nil, newFormatError(1, "expected byte '<', but got '!'")},
-		{"<1923", nil, newFormatError(5, "priority not closed")},
-		{"<19", nil, newFormatError(3, "priority not closed")},
-		{"<1923>", nil, newFormatError(5, "priority too long")},
-		{"<>", nil, newFormatError(2, "priority can't be empty")},
-		{"<abc>", nil, newFormatError(2, "priority not a number: abc")},
+		{"", nil, io.EOF, ""},
+		{"!", nil, newFormatError(1, "expected byte '<', but got '!'"), ""},
+		{"<1923", nil, newFormatError(5, "priority not closed"), ""},
+		{"<19", nil, newFormatError(3, "priority not closed"), ""},
+		{"<1923>", nil, newFormatError(5, "priority too long"), ""},
+		{"<>", nil, newFormatError(2, "priority can't be empty"), ""},
+		{"<abc>", nil, newFormatError(2, "priority not a number: abc"), ""},
 	}
 
 	if err := testParseFunc(parsePriority, tests); err != nil {
@@ -43,14 +46,14 @@ func TestParseVersion(t *testing.T) {
 	t.Parallel()
 
 	tests := []ParseFuncTest{
-		{"", &Message{}, nil},
-		{"0", &Message{Version: 0}, nil},
-		{"1", &Message{Version: 1}, nil},
-		{"10", &Message{Version: 10}, nil},
-		{"99", &Message{Version: 99}, nil},
+		{"", &Message{}, nil, ""},
+		{"0", &Message{Version: 0}, nil, ""},
+		{"1", &Message{Version: 1}, nil, ""},
+		{"10", &Message{Version: 10}, nil, ""},
+		{"99", &Message{Version: 99}, nil, ""},
 
-		{"a", nil, newFormatError(1, "version not a number: a")},
-		{"ab", nil, newFormatError(1, "version not a number: ab")},
+		{"a", nil, newFormatError(1, "version not a number: a"), ""},
+		{"ab", nil, newFormatError(1, "version not a number: ab"), ""},
 	}
 
 	if err := testParseFunc(parseVersion, tests); err != nil {
@@ -62,13 +65,13 @@ func TestParseTimestamp(t *testing.T) {
 	t.Parallel()
 
 	tests := []ParseFuncTest{
-		{"-", &Message{}, nil},
-		{"2015-10-18T17:05:55+00:00", &Message{Timestamp: time.Date(2015, 10, 18, 17, 5, 55, 0, time.UTC)}, nil},
-		{"2015-10-18T17:05:55+02:00", &Message{Timestamp: time.Date(2015, 10, 18, 17, 5, 55, 0, locationCEST)}, nil},
-		{"2015-10-18T17:05:55.956934919+02:00", &Message{Timestamp: time.Date(2015, 10, 18, 17, 5, 55, 956934919, locationCEST)}, nil},
+		{"-", &Message{}, nil, ""},
+		{"2015-10-18T17:05:55+00:00", &Message{Timestamp: time.Date(2015, 10, 18, 17, 5, 55, 0, time.UTC)}, nil, ""},
+		{"2015-10-18T17:05:55+02:00", &Message{Timestamp: time.Date(2015, 10, 18, 17, 5, 55, 0, locationCEST)}, nil, ""},
+		{"2015-10-18T17:05:55.956934919+02:00", &Message{Timestamp: time.Date(2015, 10, 18, 17, 5, 55, 956934919, locationCEST)}, nil, ""},
 
-		{"a", nil, newFormatError(1, "timestamp is not following an accepted format")},
-		{"abc", nil, newFormatError(1, "timestamp is not following an accepted format")},
+		{"a", nil, newFormatError(1, "timestamp is not following an accepted format"), ""},
+		{"abc", nil, newFormatError(1, "timestamp is not following an accepted format"), ""},
 	}
 
 	if err := testParseFunc(parseTimestamp(time.RFC3339, time.RFC3339Nano), tests); err != nil {
@@ -103,13 +106,13 @@ func TestParseHostname(t *testing.T) {
 	t.Parallel()
 
 	tests := []ParseFuncTest{
-		{"", &Message{}, io.EOF},
-		{"-", &Message{Hostname: ""}, nil},
-		{"h", &Message{Hostname: "h"}, nil},
-		{"host", &Message{Hostname: "host"}, nil},
-		{"hostname ", &Message{Hostname: "hostname"}, nil},
+		{"", &Message{}, io.EOF, ""},
+		{"-", &Message{Hostname: ""}, nil, ""},
+		{"h", &Message{Hostname: "h"}, nil, ""},
+		{"host", &Message{Hostname: "host"}, nil, ""},
+		{"hostname ", &Message{Hostname: "hostname"}, nil, " "},
 
-		{generateString("hostname", maxHostnameLength+1), nil, newFormatError(1, "hostname too long")},
+		{generateString("hostname", maxHostnameLength+1), nil, newFormatError(1, "hostname too long"), ""},
 	}
 
 	if err := testParseFunc(parseHostname, tests); err != nil {
@@ -121,13 +124,13 @@ func TestParseAppname(t *testing.T) {
 	t.Parallel()
 
 	tests := []ParseFuncTest{
-		{"", &Message{}, io.EOF},
-		{"-", &Message{Appname: ""}, nil},
-		{"a", &Message{Appname: "a"}, nil},
-		{"app", &Message{Appname: "app"}, nil},
-		{"appname ", &Message{Appname: "appname"}, nil},
+		{"", &Message{}, io.EOF, ""},
+		{"-", &Message{Appname: ""}, nil, ""},
+		{"a", &Message{Appname: "a"}, nil, ""},
+		{"app", &Message{Appname: "app"}, nil, ""},
+		{"appname ", &Message{Appname: "appname"}, nil, " "},
 
-		{generateString("appname", maxAppNameLength+1), nil, newFormatError(1, "appname too long")},
+		{generateString("appname", maxAppNameLength+1), nil, newFormatError(1, "appname too long"), ""},
 	}
 
 	if err := testParseFunc(parseAppname, tests); err != nil {
@@ -139,13 +142,13 @@ func TestParseProcessID(t *testing.T) {
 	t.Parallel()
 
 	tests := []ParseFuncTest{
-		{"", &Message{}, io.EOF},
-		{"-", &Message{ProcessID: ""}, nil},
-		{"p", &Message{ProcessID: "p"}, nil},
-		{"procId", &Message{ProcessID: "procId"}, nil},
-		{"processID ", &Message{ProcessID: "processID"}, nil},
+		{"", &Message{}, io.EOF, ""},
+		{"-", &Message{ProcessID: ""}, nil, ""},
+		{"p", &Message{ProcessID: "p"}, nil, ""},
+		{"procId", &Message{ProcessID: "procId"}, nil, ""},
+		{"processID ", &Message{ProcessID: "processID"}, nil, " "},
 
-		{generateString("processID", maxHostnameLength+1), nil, newFormatError(1, "processID too long")},
+		{generateString("processID", maxHostnameLength+1), nil, newFormatError(1, "processID too long"), ""},
 	}
 
 	if err := testParseFunc(parseProcessID, tests); err != nil {
@@ -157,13 +160,13 @@ func TestParseMessageID(t *testing.T) {
 	t.Parallel()
 
 	tests := []ParseFuncTest{
-		{"", &Message{}, io.EOF},
-		{"-", &Message{MessageID: ""}, nil},
-		{"m", &Message{MessageID: "m"}, nil},
-		{"msgID", &Message{MessageID: "msgID"}, nil},
-		{"messageID ", &Message{MessageID: "messageID"}, nil},
+		{"", &Message{}, io.EOF, ""},
+		{"-", &Message{MessageID: ""}, nil, ""},
+		{"m", &Message{MessageID: "m"}, nil, ""},
+		{"msgID", &Message{MessageID: "msgID"}, nil, ""},
+		{"messageID ", &Message{MessageID: "messageID"}, nil, " "},
 
-		{generateString("messageID", maxHostnameLength+1), nil, newFormatError(1, "messageID too long")},
+		{generateString("messageID", maxHostnameLength+1), nil, newFormatError(1, "messageID too long"), ""},
 	}
 
 	if err := testParseFunc(parseMessageID, tests); err != nil {
@@ -175,13 +178,13 @@ func TestParseMsg(t *testing.T) {
 	t.Parallel()
 
 	tests := []ParseFuncTest{
-		{"", &Message{}, nil},
-		{"m", &Message{Message: "m"}, nil},
-		{"msg", &Message{Message: "msg"}, nil},
-		{" message ", &Message{Message: "message"}, nil},
-		{string(bom) + " message ", &Message{Message: "message"}, nil},
-		{" \t\t message \t\t ", &Message{Message: "message"}, nil},
-		{" \t\t " + string(bom) + "message \t\t ", &Message{Message: "message"}, nil},
+		{"", &Message{}, nil, ""},
+		{"m", &Message{Message: "m"}, nil, ""},
+		{"msg", &Message{Message: "msg"}, nil, ""},
+		{" message ", &Message{Message: "message"}, nil, ""},
+		{string(bom) + " message ", &Message{Message: "message"}, nil, ""},
+		{" \t\t message \t\t ", &Message{Message: "message"}, nil, ""},
+		{" \t\t " + string(bom) + "message \t\t ", &Message{Message: "message"}, nil, ""},
 	}
 
 	if err := testParseFunc(parseMsg, tests); err != nil {
@@ -214,6 +217,12 @@ func testParseFunc(fn parseFunc, tests []ParseFuncTest) error {
 		if !messagesAreEqual(&gotMsg, test.Expected) {
 			return fmt.Errorf("Expected %s(%q) to return Message %#v, but got %#v",
 				getFuncName(fn), test.Input, test.Expected, gotMsg)
+		}
+
+		gotLeftover := string(buf.ReadAll())
+		if gotLeftover != test.ExpectedLeftover {
+			return fmt.Errorf("Expected leftover bytes to be %q, but got %q",
+				test.ExpectedLeftover, gotLeftover)
 		}
 	}
 
