@@ -224,6 +224,22 @@ func TestDiscardByte(t *testing.T) {
 	}
 }
 
+func TestDiscardUntil(t *testing.T) {
+	t.Parallel()
+
+	tests := []ParseFuncTest{
+		{"", &Message{}, io.EOF, ""},
+		{"bcdef", &Message{}, io.EOF, ""},
+		{"a", &Message{}, nil, ""},
+		{"abc", &Message{}, nil, "bc"},
+		{"cba", &Message{}, nil, ""},
+	}
+
+	if err := testParseFunc(discardUntil('a'), tests); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func testParseFunc(fn parseFunc, tests []ParseFuncTest) error {
 	for _, test := range tests {
 		buf := newBuffer([]byte(test.Input))
