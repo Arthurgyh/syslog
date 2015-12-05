@@ -277,7 +277,9 @@ func parseParamValue(buf *buffer) (string, error) {
 // ParseMsg reads the remainding bytes and trims an options BOM.
 func parseMsg(buf *buffer, msg *Message) error {
 	messageBytes := buf.ReadAll()
+	messageBytes = bytes.TrimSpace(messageBytes)
 	messageBytes = bytes.TrimPrefix(messageBytes, bom)
+	messageBytes = bytes.TrimSpace(messageBytes)
 	msg.Message = string(messageBytes)
 	return nil
 }

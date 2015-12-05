@@ -171,6 +171,24 @@ func TestParseMessageID(t *testing.T) {
 	}
 }
 
+func TestParseMsg(t *testing.T) {
+	t.Parallel()
+
+	tests := []ParseFuncTest{
+		{"", &Message{}, nil},
+		{"m", &Message{Message: "m"}, nil},
+		{"msg", &Message{Message: "msg"}, nil},
+		{" message ", &Message{Message: "message"}, nil},
+		{string(bom) + " message ", &Message{Message: "message"}, nil},
+		{" \t\t message \t\t ", &Message{Message: "message"}, nil},
+		{" \t\t " + string(bom) + "message \t\t ", &Message{Message: "message"}, nil},
+	}
+
+	if err := testParseFunc(parseMsg, tests); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func testParseFunc(fn parseFunc, tests []ParseFuncTest) error {
 	for _, test := range tests {
 		buf := newBuffer([]byte(test.Input))
