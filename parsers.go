@@ -46,17 +46,17 @@ func parsePriority(buf *buffer, msg *Message) error {
 	}
 
 	startPos := buf.Pos()
-	priorityByte, err := buf.ReadSlice(priorityEnd)
+	priorityBytes, err := buf.ReadSlice(priorityEnd)
 	if err == io.EOF {
 		return newFormatError(startPos, "priority not closed")
 	} else if err != nil {
 		return err
-	} else if len(priorityByte) > maxPriorityLength+1 { // closing tag is included.
+	} else if len(priorityBytes) > maxPriorityLength+1 { // closing tag is included.
 		return newFormatError(startPos, "priority too long")
 	}
-	priorityByte = priorityByte[:len(priorityByte)-1]
+	priorityBytes = priorityBytes[:len(priorityBytes)-1]
 
-	priority, err := strconv.Atoi(string(priorityByte))
+	priority, err := strconv.Atoi(string(priorityBytes))
 	if err != nil {
 		return newFormatError(startPos, "priority not a number: "+err.Error())
 	}
