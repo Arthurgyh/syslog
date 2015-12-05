@@ -16,6 +16,9 @@ type buffer struct {
 
 // Pos returns the current position of the buffer, starts at 1.
 func (buf *buffer) Pos() int {
+	if buf.position == buf.length {
+		return buf.length
+	}
 	return buf.position + 1
 }
 
