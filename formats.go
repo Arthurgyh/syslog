@@ -47,10 +47,10 @@ var (
 
 // Format: <191>10 2015-09-30T23:10:11+02:00 hostname appname procid msgid [data name="value"] message.
 var rfc5424Format = format{
-	parsePriority,     //<191>
-	calculateFacility, //
-	calculateSeverity, //
-	parseVersion,      //10
+	parsePriority, //<191>
+	calculateFacility,
+	calculateSeverity,
+	parseVersion, //10
 	discardSpace,
 	parseTimestamp(time.RFC3339, time.RFC3339Nano), // 2015-09-30T23:10:11+02:00
 	discardSpace,
