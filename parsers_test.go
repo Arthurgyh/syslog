@@ -240,6 +240,23 @@ func TestDiscardUntil(t *testing.T) {
 	}
 }
 
+func TestDiscardSpace(t *testing.T) {
+	t.Parallel()
+
+	tests := []ParseFuncTest{
+		{"", &Message{}, io.EOF, ""},
+		{" ", &Message{}, nil, ""},
+		{" abc", &Message{}, nil, "abc"},
+
+		{"bc", &Message{}, newFormatError(1, "expected byte ' ', but got 'b'"), ""},
+		{"cb ", &Message{}, newFormatError(1, "expected byte ' ', but got 'c'"), ""},
+	}
+
+	if err := testParseFunc(discardSpace, tests); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func testParseFunc(fn parseFunc, tests []ParseFuncTest) error {
 	for _, test := range tests {
 		buf := newBuffer([]byte(test.Input))
