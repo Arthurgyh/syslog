@@ -45,19 +45,20 @@ func parsePriority(buf *buffer, msg *Message) error {
 		return err
 	}
 
+	startPos := buf.Pos()
 	priorityByte, err := buf.ReadSlice(priorityEnd)
 	if err == io.EOF {
-		return newFormatError("priority not closed")
+		return newFormatError(startPos, "priority not closed")
 	} else if err != nil {
 		return err
 	} else if len(priorityByte) > maxPriorityLength+1 { // closing tag is included.
-		return newFormatError("priority too long")
+		return newFormatError(startPos, "priority too long")
 	}
 	priorityByte = priorityByte[:len(priorityByte)-1]
 
 	priority, err := strconv.Atoi(string(priorityByte))
 	if err != nil {
-		return newFormatError("priority not a number: " + err.Error())
+		return newFormatError(startPos, "priority not a number: "+err.Error())
 	}
 
 	msg.Priority = Priority(priority)
@@ -79,7 +80,7 @@ func parseVersion(buf *buffer, msg *Message) error {
 
 	version, err := strconv.ParseUint(string(versionBytes), 10, 0)
 	if err != nil {
-		return newFormatError("version not a number: " + err.Error())
+		return newFormatError(buf.Pos(), "version not a number: "+err.Error())
 	}
 
 	if n := buf.Discard(len(versionBytes)); n != len(versionBytes) {
@@ -106,7 +107,7 @@ func parseTimestamp(formats ...string) parseFunc {
 		}
 
 		// todo: improve the error message, include the given formats.
-		return newFormatError("timestamp is not following an accepted format")
+		return newFormatError(buf.Pos(), "timestamp is not following an accepted format")
 	}
 }
 
@@ -206,8 +207,8 @@ func parseData(buf *buffer, msg *Message) error {
 			} else if c == dataEnd {
 				break
 			} else if c != spaceByte {
-				return newFormatError("expected byte '" + string(dataEnd) +
-					"' or '" + string(spaceByte) + "', but got '" + string(c) + "'")
+				return newFormatError(buf.Pos(), "expected byte '"+string(dataEnd)+
+					"' or '"+string(spaceByte)+"', but got '"+string(c)+"'")
 			}
 		}
 
@@ -219,8 +220,8 @@ func parseData(buf *buffer, msg *Message) error {
 			buf.UnreadByte()
 			break
 		} else if c != dataStart {
-			return newFormatError("expected byte '" + string(spaceByte) +
-				"' or '" + string(dataEnd) + "', but got '" + string(c) + "'")
+			return newFormatError(buf.Pos(), "expected byte '"+string(spaceByte)+
+				"' or '"+string(dataEnd)+"', but got '"+string(c)+"'")
 		}
 	}
 
@@ -236,7 +237,8 @@ func parseParamName(buf *buffer) (string, error) {
 	nameBytes = nameBytes[:len(nameBytes)-1]
 
 	if len(nameBytes) > maxDataParamLength {
-		return "", newFormatError("data param name too long")
+		return "", newFormatError(buf.Pos()-len(nameBytes),
+			"data param name too long")
 	}
 
 	return string(nameBytes), nil
@@ -305,7 +307,7 @@ func parseSingleValue(buf *buffer, name string, allowNilValue bool, maxLength in
 	if err != nil && err != io.EOF {
 		return "", err
 	} else if len(value) > maxLength+1 { // space is included.
-		return "", newFormatError(name + " too long")
+		return "", newFormatError(buf.Pos()-len(value), name+" too long")
 	}
 
 	buf.UnreadByte()
@@ -317,8 +319,8 @@ func checkByte(buf *buffer, expected byte) error {
 	if err != nil {
 		return err
 	} else if c != expected {
-		return newFormatError("expected byte '" + string(expected) +
-			"', but got '" + string(c) + "'")
+		return newFormatError(buf.Pos()-1, "expected byte '"+string(expected)+
+			"', but got '"+string(c)+"'")
 	}
 	return nil
 }
@@ -358,7 +360,8 @@ func parseNginxData(buf *buffer, msg *Message) error {
 		keyValue := bytes.SplitN(bb, []byte{colonByte}, 2)
 		if len(keyValue) != 2 {
 			// todo: improve error message, be more clear about it.
-			return newFormatError("Expected to encounter ':', but didn't find one")
+			return newFormatError(buf.Pos()-len(keyValue),
+				"Expected to encounter ':', but didn't find one")
 		}
 
 		key := bytes.TrimSpace(keyValue[0])

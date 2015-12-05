@@ -16,8 +16,6 @@ import (
 )
 
 // todo: only allow PRINTUSASCII, currently not checked: %d33-126.
-// todo: create format error to give information on where the error is located
-// (index)?
 
 // Message represents a single syslog message.
 type Message struct {
@@ -157,8 +155,9 @@ func ParseMessage(b []byte, format format) (*Message, error) {
 	return &msg, nil
 }
 
-func newFormatError(msg string) error {
-	return errors.New("syslog: format incorrect: " + msg)
+func newFormatError(column int, msg string) error {
+	return errors.New("syslog: format incorrect: " + msg +
+		", at column " + strconv.Itoa(column))
 }
 
 // Parser parses a single syslog log, with an already defined format.

@@ -14,6 +14,11 @@ type buffer struct {
 	position int
 }
 
+// Pos returns the current position of the buffer, starts at 1.
+func (buf *buffer) Pos() int {
+	return buf.position + 1
+}
+
 // Discard discards the given number of bytes. It returns the number of given
 // bytes discarded.
 func (buf *buffer) Discard(n int) (discarded int) {
