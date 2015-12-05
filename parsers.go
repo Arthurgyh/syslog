@@ -76,23 +76,26 @@ func parsePriority(buf *buffer, msg *Message) error {
 
 func parseVersion(buf *buffer, msg *Message) error {
 	versionBytes, err := buf.Peek(maxVersionLength)
-	if err != nil {
+	if err != nil && err != io.EOF {
 		return err
 	}
+	l := len(versionBytes)
 
 	// Version can be between 0 and 2 digits long.
-	if versionBytes[0] == spaceByte {
+	if l == 0 || (l >= 1 && versionBytes[0] == spaceByte) {
 		return nil
-	} else if versionBytes[1] == spaceByte {
+	} else if l == 2 && versionBytes[1] == spaceByte {
 		versionBytes = versionBytes[:1]
+		l = len(versionBytes)
 	}
 
 	version, err := strconv.ParseUint(string(versionBytes), 10, 0)
 	if err != nil {
-		return newFormatError(buf.Pos(), "version not a number: "+err.Error())
+		return newFormatError(buf.Pos(), "version not a number: "+
+			string(versionBytes))
 	}
 
-	if n := buf.Discard(len(versionBytes)); n != len(versionBytes) {
+	if n := buf.Discard(l); n != l {
 		return io.EOF
 	}
 

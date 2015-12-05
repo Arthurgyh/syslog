@@ -38,6 +38,25 @@ func TestParsePriority(t *testing.T) {
 	}
 }
 
+func TestParseVersion(t *testing.T) {
+	t.Parallel()
+
+	tests := []ParseFuncTest{
+		{"", &Message{}, nil},
+		{"0", &Message{Version: 0}, nil},
+		{"1", &Message{Version: 1}, nil},
+		{"10", &Message{Version: 10}, nil},
+		{"99", &Message{Version: 99}, nil},
+
+		{"a", nil, newFormatError(1, "version not a number: a")},
+		{"ab", nil, newFormatError(1, "version not a number: ab")},
+	}
+
+	if err := testParseFunc(parseVersion, tests); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func testParseFunc(fn parseFunc, tests []ParseFuncTest) error {
 	for _, test := range tests {
 		buf := newBuffer([]byte(test.Input))
