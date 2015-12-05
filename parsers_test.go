@@ -7,6 +7,7 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+	"time"
 )
 
 type ParseFuncTest struct {
@@ -53,6 +54,24 @@ func TestParseVersion(t *testing.T) {
 	}
 
 	if err := testParseFunc(parseVersion, tests); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestParseTimestamp(t *testing.T) {
+	t.Parallel()
+
+	tests := []ParseFuncTest{
+		{"-", &Message{}, nil},
+		{"2015-10-18T17:05:55+00:00", &Message{Timestamp: time.Date(2015, 10, 18, 17, 5, 55, 0, time.UTC)}, nil},
+		{"2015-10-18T17:05:55+02:00", &Message{Timestamp: time.Date(2015, 10, 18, 17, 5, 55, 0, locationCEST)}, nil},
+		{"2015-10-18T17:05:55.956934919+02:00", &Message{Timestamp: time.Date(2015, 10, 18, 17, 5, 55, 956934919, locationCEST)}, nil},
+
+		{"a", nil, newFormatError(1, "timestamp is not following an accepted format")},
+		{"abc", nil, newFormatError(1, "timestamp is not following an accepted format")},
+	}
+
+	if err := testParseFunc(parseTimestamp(time.RFC3339, time.RFC3339Nano), tests); err != nil {
 		t.Fatal(err)
 	}
 }
