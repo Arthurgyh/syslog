@@ -55,7 +55,7 @@ func TestBufferDiscardTooMuch(t *testing.T) {
 	n := buf.Discard(discardLength)
 
 	if n != expected {
-		t.Fatal("Expected buf.Discard(%d) to return %d, but got %d",
+		t.Fatalf("Expected buf.Discard(%d) to return %d, but got %d",
 			discardLength, expected, n)
 	}
 }
@@ -104,7 +104,7 @@ func TestBufferUnreadFirstByte(t *testing.T) {
 		got := recv.(string)
 		expected := "syslog: can't unread byte"
 		if got != expected {
-			t.Fatal("Expected panic value to be %q, but got %q", expected, got)
+			t.Fatalf("Expected panic value to be %q, but got %q", expected, got)
 		}
 	}()
 
