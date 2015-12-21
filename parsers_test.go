@@ -272,6 +272,28 @@ func TestParseNginxMsg(t *testing.T) {
 	}
 }
 
+func TestParseNginxData(t *testing.T) {
+	t.Parallel()
+
+	tests := []ParseFuncTest{
+		{"a:", &Message{Data: map[string]map[string]string{"data": {"a": ""}}}, nil, ""},
+		{"a: a", &Message{Data: map[string]map[string]string{"data": {"a": "a"}}}, nil, ""},
+		{"a : a, b : b", &Message{Data: map[string]map[string]string{"data": {"a": "a", "b": "b"}}}, nil, ""},
+		{`"a": a, abc: "a b c"`, &Message{Data: map[string]map[string]string{"data": {"a": "a", "abc": "a b c"}}}, nil, ""},
+		{`" a ": a , " abc ": " a b c "`, &Message{Data: map[string]map[string]string{"data": {" a ": "a", " abc ": " a b c "}}}, nil, ""},
+		{`"a b": "a b", abc: "a b c" `, &Message{Data: map[string]map[string]string{"data": {"a b": "a b", "abc": "a b c"}}}, nil, ""},
+		{`"a:b": "c,b"`, &Message{Data: map[string]map[string]string{"data": {"a:b": "c,b"}}}, nil, ""},
+		{`a: a, d: "\"d\""`, &Message{Data: map[string]map[string]string{"data": {"a": "a", "d": `"d"`}}}, nil, ""},
+
+		{"", &Message{}, io.EOF, ""},
+		{"a: a, b", &Message{}, io.EOF, ""},
+	}
+
+	if err := testParseFunc(parseNginxData, tests); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func testParseFunc(fn parseFunc, tests []ParseFuncTest) error {
 	for _, test := range tests {
 		buf := newBuffer([]byte(test.Input))

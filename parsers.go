@@ -6,9 +6,11 @@ package syslog
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"strconv"
 	"time"
+	"unicode"
 )
 
 const (
@@ -24,6 +26,7 @@ const (
 	spaceByte     byte = ' '
 	nilValueByte  byte = '-'
 	equalByte     byte = '='
+	escapeByte    byte = '\\'
 	qouteByte     byte = '"'
 	commaByte     byte = ','
 	colonByte     byte = ':'
@@ -392,26 +395,22 @@ func parseNginxMsg(buf *buffer, msg *Message) error {
 
 func parseNginxData(buf *buffer, msg *Message) error {
 	var data = map[string]string{}
+
 	for {
-		bb, err := buf.ReadSlice(commaByte)
+		startPos := buf.Pos()
+
+		key, err := getValue(buf, colonByte, false)
+		if err != nil {
+			if err == io.EOF {
+				return err
+			}
+			return newFormatError(startPos, err.Error())
+		}
+
+		value, err := getValue(buf, commaByte, true)
 		if err != nil && err != io.EOF {
-			return err
+			return newFormatError(startPos, err.Error())
 		}
-		bb = bytes.TrimSuffix(bb, []byte{commaByte})
-
-		keyValue := bytes.SplitN(bb, []byte{colonByte}, 2)
-		if len(keyValue) != 2 {
-			// todo: improve error message, be more clear about it.
-			return newFormatError(buf.Pos()-len(keyValue),
-				"Expected to encounter ':', but didn't find one")
-		}
-
-		key := bytes.TrimSpace(keyValue[0])
-		value := bytes.TrimSpace(keyValue[1])
-
-		qouteSlice := []byte{qouteByte}
-		key = bytes.TrimPrefix(bytes.TrimSuffix(key, qouteSlice), qouteSlice)
-		value = bytes.TrimPrefix(bytes.TrimSuffix(value, qouteSlice), qouteSlice)
 
 		data[string(key)] = string(value)
 
@@ -420,7 +419,83 @@ func parseNginxData(buf *buffer, msg *Message) error {
 		}
 	}
 
-	msg.Data = map[string]map[string]string{}
-	msg.Data["data"] = data
+	msg.Data = map[string]map[string]string{
+		"data": data,
+	}
 	return nil
+}
+
+// IF allowEOF is true it won't return io.EOF as an error, but see it as the end
+// of the value.
+func getValue(buf *buffer, end byte, allowEOF bool) ([]byte, error) {
+	var started, isQouted, qoutedClosed bool
+	var value []byte
+	var er error
+
+	for {
+		c, err := buf.ReadByte()
+		if err != nil {
+			if allowEOF && err == io.EOF {
+				er = err
+				break
+			}
+
+			return []byte{}, err
+		}
+
+		if !started {
+			if isSpace(c) {
+				continue
+			}
+
+			if c == qouteByte {
+				isQouted = true
+			} else {
+				value = append(value, c)
+			}
+
+			started = true
+			continue
+		}
+
+		if qoutedClosed {
+			if isSpace(c) {
+				continue
+			} else if c != end {
+				return []byte{}, fmt.Errorf("unexpected %s after closed qoute", string(c))
+			}
+		}
+
+		if c == qouteByte {
+			if isQouted && value[len(value)-1] != escapeByte {
+				qoutedClosed = true
+				continue
+			} else if value[len(value)-1] == escapeByte {
+				// replace the escape byte with the byte being escaped.
+				value[len(value)-1] = c
+				continue
+			}
+		}
+
+		if c == end && (!isQouted || qoutedClosed) {
+			break
+		}
+
+		value = append(value, c)
+	}
+
+	if !isQouted {
+		value = bytes.TrimRightFunc(value, unicode.IsSpace)
+	}
+
+	// todo: trim left space.
+	return value, er
+}
+
+func isSpace(c byte) bool {
+	switch c {
+	case '\t', '\n', '\r', ' ':
+		return true
+	}
+	return false
 }
