@@ -10,8 +10,6 @@ import (
 	"time"
 )
 
-// todo: add tests for all parsers with left over values.
-
 type ParseFuncTest struct {
 	Input            string
 	Expected         *Message
@@ -170,6 +168,22 @@ func TestParseMessageID(t *testing.T) {
 	}
 
 	if err := testParseFunc(parseMessageID, tests); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestParseData(t *testing.T) {
+	t.Parallel()
+
+	tests := []ParseFuncTest{
+		{"", &Message{}, io.EOF, ""},
+		{"-", &Message{}, nil, ""},
+		{`[dataID]`, &Message{Data: map[string]map[string]string{"dataID": {}}}, nil, ""},
+		{`[dataID dataName="dataValue"]`, &Message{Data: map[string]map[string]string{"dataID": {"dataName": "dataValue"}}}, nil, ""},
+		{`[dataID dataName="dataValue" dataName2="dataValue2"]`, &Message{Data: map[string]map[string]string{"dataID": {"dataName": "dataValue", "dataName2": "dataValue2"}}}, nil, ""},
+	}
+
+	if err := testParseFunc(parseData, tests); err != nil {
 		t.Fatal(err)
 	}
 }

@@ -200,7 +200,7 @@ func parseData(buf *buffer, msg *Message) error {
 		if err != nil {
 			return err
 		}
-		buf.ReadByte() // read next space.
+		buf.ReadByte() // Read next space.
 
 		data[dataID] = map[string]string{}
 		for {
