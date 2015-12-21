@@ -3,3 +3,9 @@ language: go
 go:
   - 1.5
   - tip
+install:
+  - go get github.com/remyoudompheng/go-misc/deadcode
+script:
+  - gofmt -s -d *.go
+  - deadcode
+  - go test -race -v
