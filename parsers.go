@@ -384,13 +384,16 @@ func nextIsNilValue(buf *buffer) bool {
 func parseNginxMsg(buf *buffer, msg *Message) error {
 	msgBytes, err := buf.ReadSlice(commaByte)
 	if err != nil {
-		return err
+		//		return err
+
+	} else {
+		msgBytes = msgBytes[:len(msgBytes)-1]
+
 	}
 
-	msgBytes = msgBytes[:len(msgBytes)-1]
 	msgBytes = bytes.TrimSpace(msgBytes)
 	msg.Message = string(msgBytes)
-	return nil
+	return err
 }
 
 func parseNginxData(buf *buffer, msg *Message) error {

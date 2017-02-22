@@ -8,6 +8,7 @@ package syslog
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"sort"
 	"strconv"
@@ -143,11 +144,15 @@ func ParseMessage(b []byte, format format) (*Message, error) {
 	buf := newBuffer(b)
 
 	var msg Message
-	for _, parseFunc := range format {
+	for i, parseFunc := range format {
 		if err := parseFunc(buf, &msg); err != nil {
 			if err == io.EOF {
+				if i >= 16 {
+					break
+				}
 				err = io.ErrUnexpectedEOF
 			}
+			fmt.Printf("error in func:%d\n %v", i, err.Error())
 			return nil, err
 		}
 	}
